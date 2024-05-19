@@ -1,0 +1,414 @@
+/*
+ *
+ *
+ *
+ */
+
+using Newtonsoft.Json.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor.Experimental.RestService;
+using UnityEditor.XR;
+using UnityEngine;
+using UnityEngine.Audio;
+using System.IO;
+using SharpDX.XAudio2;
+using SharpDX.Multimedia;
+using System.Drawing;
+using System.Linq;
+using System;
+using System.CodeDom;
+using System.Runtime.Serialization;
+using System.Threading.Tasks;
+using System.Data.SqlTypes;
+
+public class playmusic : MonoBehaviour
+{
+    [Serializable]
+    public class InvalidFileFormatException : Exception
+    {
+        public InvalidFileFormatException() : base()
+        {
+
+        }
+
+        public InvalidFileFormatException(string message) : base(message) 
+        { 
+        
+        }
+
+        public InvalidFileFormatException(string message, Exception innerExption) : base(message, innerExption)
+        {
+
+        }
+
+        protected InvalidFileFormatException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+
+        }
+    }
+
+    // XAudio2関連
+    private XAudio2 xaDevice;
+    // 全てのボイスデータを合成・生成して、マスターボイスとしてサウンドカードデバイスにデータを送るクラス
+    private MasteringVoice xaMaster;
+    // 各効果音をボイスデータとして管理するためのクラス
+    private List<SourceVoice> xaSESourceList = new List<SourceVoice>();
+    private float time;
+    private bool played;
+    private JObject jsonObj;
+    private string bgm;
+    private float offset;
+    private bool Setted_up;
+    private SourceVoice xaSource;
+
+    private float tmp;
+
+    public void PlaySound(string soundFileName)
+    {
+        switch (Path.GetExtension(soundFileName))
+        {
+            case ".wav":
+                {
+                    try
+                    {
+                        // サウンドデバイスが無い場合処理しない
+                        if (xaDevice == null) { return; }
+
+                        // WAVEファイルを読み込んで設定
+                        using (SoundStream xaStream = new SoundStream(File.OpenRead(soundFileName)))
+                        {
+                            xaSource = new SourceVoice(xaDevice, xaStream.Format);
+                            AudioBuffer xaBuffer = new AudioBuffer()
+                            {
+                                // 読み込む容量
+                                AudioBytes = (int)xaStream.Length,
+                                // WaveStreamを渡す
+                                Stream = xaStream,
+                                // ループ設定
+                                LoopCount = XAudio2.NoLoopRegion,
+                                // ループ開始位置
+                                LoopBegin = 0,
+                                // 再生する長さ。0だと全部。
+                                LoopLength = 0,
+                                // 再生開始位置
+                                PlayBegin = 0,
+                                PlayLength = 0,
+                                Flags = BufferFlags.EndOfStream,
+                            };
+                            xaStream.Close();
+
+                            if (xaSource != null)
+                            {
+                                xaSource.SubmitSourceBuffer(xaBuffer, xaStream.DecodedPacketsInfo);
+                                xaSource.SetVolume(1.0F);
+                                (xaSESourceList).Add(xaSource);
+                                xaSource.Start();
+                            }
+                        }
+                        break;
+                    } catch (Exception e) {
+                        Debug.LogError(e);
+                        break;
+                    }
+                }
+            case ".mp3":
+                {
+                    if (xaDevice == null) { return; }
+                    // WAVEファイルを読み込んで設定
+                    using (SoundStream xaStream = new SoundStream(File.OpenRead(soundFileName)))
+                    {
+                        xaSource = new SourceVoice(xaDevice, xaStream.Format);
+                        AudioBuffer xaBuffer = new AudioBuffer()
+                        {
+                            // 読み込む容量
+                            AudioBytes = (int)xaStream.Length,
+                            // WaveStreamを渡す
+                            Stream = xaStream,
+                            // ループ設定
+                            LoopCount = XAudio2.NoLoopRegion,
+                            // ループ開始位置
+                            LoopBegin = 0,
+                            // 再生する長さ。0だと全部。
+                            LoopLength = 0,
+                            // 再生開始位置
+                            PlayBegin = 0,
+                            PlayLength = 0,
+                            Flags = BufferFlags.EndOfStream,
+                        };
+                        xaStream.Close();
+
+                        if (xaSource != null)
+                        {
+                            xaSource.SubmitSourceBuffer(xaBuffer, xaStream.DecodedPacketsInfo);
+                            xaSource.SetVolume(1.0F);
+                            (xaSESourceList).Add(xaSource);
+                            xaSource.Start();
+                        }
+                        break;
+                    }
+                }
+        }
+    }
+
+    // 効果音の停止
+    public void StopSound()
+    {
+        // サウンドデバイスが無い場合処理しない
+        if (xaDevice == null) { return; }
+
+        foreach (var n in xaSESourceList)
+        {
+            n.Stop();
+            n.Dispose();
+        }
+        xaSESourceList.Clear();
+    }
+
+    // Start is called before the first frame update
+    private void Setup()
+    {
+        try
+        {
+            // XAudio初期化
+            xaDevice = new XAudio2();
+            xaMaster = new MasteringVoice(xaDevice);
+        }
+        // vistaの時、スピーカーなどが接続されていない場合は生成できない
+        catch { Debug.LogError("サウンドデバイスの生成に失敗しました。"); }
+        string loadjson = Resources.Load<TextAsset>("Charts/" + adata.chart).ToString();
+        jsonObj = JObject.Parse(loadjson);
+        bgm = jsonObj["maindata"]["music"].ToString() + ".wav";
+        offset = float.Parse(jsonObj["maindata"]["offset"] + "") / 1000;
+        StopSound();
+        if (bgm.ToString().Split(".").Last() != "wav")
+        {
+            throw new InvalidFileFormatException("Only \".wav\" files can be used.");
+        }
+        /*
+        string chart = adata.chart;
+        string loadjson = Resources.Load<TextAsset>("Charts/" + chart).ToString();
+        JObject jsonObj = JObject.Parse(loadjson);
+        offset = float.Parse(jsonObj["maindata"]["offset"] + "") / 1000;
+        chart = adata.chart;
+        loadjson = Resources.Load<TextAsset>("Charts/" + chart).ToString();
+        jsonObj = JObject.Parse(loadjson);
+        string bgm = jsonObj["maindata"]["music"] + "";
+        clip = Resources.Load<AudioClip>("Musics/" + bgm);
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.clip = clip;
+        */
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (adata.ready_to_start)
+        {
+            if (!Setted_up)
+            {
+                Setup();
+                Setted_up = true;
+            }
+            time += Time.deltaTime;
+            if (time >= 8.0f + offset && !played)
+            {
+                Task.Run(() =>
+                {
+                    PlaySound("./Assets/Resources/Musics/" + bgm);
+                });
+                /*
+                soundPlayerObj = new GameObject();
+                soundPlayerObj.name = "soundPlayer";
+                audioSource = soundPlayerObj.AddComponent<AudioSource>();
+                audioSource.clip = bgmClip;
+
+                audioMixier = Resources.Load<AudioMixer>("Audio/AudioMixer");
+                audioSource.outputAudioMixerGroup = audioMixier.FindMatchingGroups("BGM")[0];
+
+                audioSource.loop = true;
+                audioSource.Play();
+                DontDestroyOnLoad(soundPlayerObj);
+                */
+                played = true;
+            }
+
+            Debug.LogError(xaSource + "");
+
+            if (xaSource != null && xaSource.State.BuffersQueued == 0)
+            {
+                if (tmp >= 3)
+                {
+                    played = false;
+                    xaSource = null;
+                    ScoreManeger.combo = 0;
+                    ScoreManeger.score = 0;
+                    adata.ready_to_start = false;
+                    //adata.game_time = 0;
+                    Setted_up = false;
+                    time = 0;
+                }
+                else
+                {
+                    tmp += Time.deltaTime;
+                }
+            }
+            else
+            {
+                tmp = 0;
+            }
+        }
+    }
+
+    void OnApplicationQuit()
+    {
+        StopSound();
+        played = false;
+    }
+}
+
+ /*
+ *
+ *
+ *
+ *
+ */
+
+/*
+using UnityEngine;
+using System.IO;
+using Newtonsoft.Json.Linq;
+using static UI;
+using System;
+
+public class playmusic : MonoBehaviour
+{
+    private AudioSource audioSource;
+    private float time;
+    private bool played;
+    private string bgm;
+    private float offset;
+    private bool Setted_up;
+    private float tmp;
+
+    public void PlaySound(string soundFileName)
+    {
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        switch (Path.GetExtension(soundFileName))
+        {
+            case ".wav":
+                {
+                    try
+                    {
+                        AudioClip audioClip = Resources.Load<AudioClip>("Musics/" + Path.GetFileNameWithoutExtension(soundFileName));
+                        if (audioClip != null)
+                        {
+                            audioSource.clip = audioClip;
+                            audioSource.Play();
+                        }
+                        else
+                        {
+                            Debug.LogError("AudioClip not found: " + soundFileName);
+                        }
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(e);
+                        break;
+                    }
+                }
+            case ".mp3":
+                {
+                    try
+                    {
+                        AudioClip audioClip = Resources.Load<AudioClip>("Musics/" + Path.GetFileNameWithoutExtension(soundFileName));
+                        if (audioClip != null)
+                        {
+                            audioSource.clip = audioClip;
+                            audioSource.Play();
+                        }
+                        else
+                        {
+                            Debug.LogError("AudioClip not found: " + soundFileName);
+                        }
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(e);
+                        break;
+                    }
+                }
+        }
+    }
+
+    public void StopSound()
+    {
+        if (audioSource != null)
+        {
+            audioSource.Stop();
+            Destroy(audioSource);
+        }
+    }
+
+    private void Setup()
+    {
+        string loadjson = Resources.Load<TextAsset>("Charts/" + adata.chart).ToString();
+        JObject jsonObj = JObject.Parse(loadjson);
+        bgm = jsonObj["maindata"]["music"].ToString();
+        offset = float.Parse(jsonObj["maindata"]["offset"] + "") / 1000;
+        StopSound();
+    }
+
+    void Update()
+    {
+        if (adata.ready_to_start)
+        {
+            if (!Setted_up)
+            {
+                Setup();
+                Setted_up = true;
+            }
+            time += Time.deltaTime;
+            if (time >= 8.0f + offset && !played)
+            {
+                PlaySound("Musics/" + bgm);
+                played = true;
+            }
+
+            if (audioSource != null && !audioSource.isPlaying)
+            {
+                if (tmp >= 3)
+                {
+                    played = false;
+                    audioSource = null;
+                    ScoreManeger.combo = 0;
+                    ScoreManeger.score = 0;
+                    adata.ready_to_start = false;
+                    Setted_up = false;
+                    time = 0;
+                }
+                else
+                {
+                    tmp += Time.deltaTime;
+                }
+            }
+            else
+            {
+                tmp = 0;
+            }
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        StopSound();
+        played = false;
+    }
+}
+*/

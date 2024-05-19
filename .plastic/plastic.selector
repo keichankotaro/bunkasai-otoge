@@ -1,0 +1,4 @@
+repository "bunkasai-2023-otoge@keichankotaro@cloud"
+  path "/"
+    br "/main"
+    co "/main"
