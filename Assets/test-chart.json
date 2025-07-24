@@ -1,0 +1,38 @@
+{
+  "maindata": {
+    "music": "Armageddon.mp3",
+    "bpm": 210,
+  },
+  "chartdata": {
+    "L1": {
+      "L1data": {
+        "notes": 2
+      },
+      "1": {
+        "aid": 1,
+        "speed": 0.2,
+        "time": 1,
+      },
+      "2": {
+        "aid": 3,
+        "speed": 0.4,
+        "time": 2,
+      },
+    },
+    "L2": {
+      "L2data": {
+        "notes": 2
+      },
+      "1": {
+        "aid": 2,
+        "speed": 0.3,
+        "time": 1,
+      },
+      "2": {
+        "aid": 4,
+        "speed": 0.3,
+        "time": 2,
+      },
+    }
+  }
+}

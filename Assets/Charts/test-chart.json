@@ -1,0 +1,185 @@
+{
+  "maindata": {
+    "music": "Armageddon.mp3",
+    "bpm": 210
+  },
+  "chartdata": {
+    "L1": {
+      "L1data": {
+         "notes": 6
+      },
+      "1": {
+        "aid": 1,
+        "time": 1.0,
+        "speed": 0.4,
+        "type": "tap"
+      },
+      "2": {
+        "aid": 2,
+        "time": 2.0,
+        "speed": 0.2,
+        "type": "tap"
+      },
+      "3": {
+        "aid": 3,
+        "time": 3.0,
+        "speed": 0.4,
+        "type": "tap"
+      },
+      "4": {
+        "aid": 4,
+        "time": 4.0,
+        "speed": 0.2,
+        "type": "tap"
+      },
+      "5": {
+        "aid": 5,
+        "time": 5.0,
+        "speed": 0.4,
+        "type": "tap"
+      },
+      "6": {
+        "aid": 6,
+        "time": 6.0,
+        "end":  8.0,
+        "speed": 0.2,
+        "type": "long"
+      },
+    },
+    "L2": {
+      "L2data": {
+        "notes": 10
+      },
+      "1": {
+        "aid": 7,
+        "time": 2.0,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "2": {
+        "aid": 8,
+        "time": 2.2,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "3": {
+        "aid": 9,
+        "time": 2.4,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "4": {
+        "aid": 10,
+        "time": 2.6,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "5": {
+        "aid": 11,
+        "time": 2.8,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "6": {
+        "aid": 12,
+        "time": 3.0,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "7": {
+        "aid": 13,
+        "time": 3.2,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "8": {
+        "aid": 14,
+        "time": 3.4,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "9": {
+        "aid": 15,
+        "time": 3.6,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "10": {
+        "aid": 16,
+        "time": 3.8,
+        "speed": 0.3,
+        "type": "tap"
+      }
+    },
+    "L3": {
+      "L3data": {
+        "notes": 10
+      },
+      "1": {
+        "aid": 17,
+        "time": 2.1,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "2": {
+        "aid": 18,
+        "time": 2.3,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "3": {
+        "aid": 19,
+        "time": 2.5,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "4": {
+        "aid": 20,
+        "time": 2.7,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "5": {
+        "aid": 21,
+        "time": 2.9,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "6": {
+        "aid": 22,
+        "time": 3.1,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "7": {
+        "aid": 23,
+        "time": 3.3,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "8": {
+        "aid": 24,
+        "time": 3.5,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "9": {
+        "aid": 25,
+        "time": 3.7,
+        "speed": 0.3,
+        "type": "tap"
+      },
+      "10": {
+        "aid": 26,
+        "time": 3.9,
+        "speed": 0.3,
+        "type": "tap"
+      }
+    },
+    "L4": {
+      "L4data": {
+        "notes": 0
+      },
+    }
+  }
+}
