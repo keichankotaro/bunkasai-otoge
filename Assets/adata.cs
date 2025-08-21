@@ -33,12 +33,12 @@ public class adata : MonoBehaviour
 
     // ”»’è
     public static float auto = 0.001f;
-    public static float perfect = 0.04f;
+    public static float perfect = 0.05f;
     public static float good = 0.08f;
-    public static float bad = 0.15f;
-    public static float miss = 0.22f;
+    public static float bad = 0.13f;
+    public static float miss = 0.20f;
     // ƒƒ“ƒOI“_”»’è
-    public static float longEndTimeLag = 0.07f;
+    public static float longEndTimeLag = 0.1f;
 
     public static bool ready_to_start = false;
     public static bool start_dl = false;
