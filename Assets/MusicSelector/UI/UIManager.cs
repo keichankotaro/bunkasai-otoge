@@ -1,11 +1,12 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour {
-  public static Musics List<string> = new List<string>;
-  public static Composers List<string> = new List<string>;
-  public static BPMs List<string> = new List<string>;
-  public static Jackets List<Sprite> = new List<Sprite>;
-  public static LevelExists List<List<bool>> = new List<List<bool>>;
+  public static List<string> Musics = new List<string>();
+  public static List<string> Composers = new List<string>();
+  public static List<string> BPMs = new List<string>();
+  public static List<Sprite> Jackets = new List<Sprite>();
+  public static List<List<bool>> LevelExists = new List<List<bool>>();
 }
