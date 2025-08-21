@@ -385,6 +385,8 @@ public class ShowDetails : MonoBehaviour
 
     private void UpdateUI(string difficulty = null)
     {
+        if (LevelExists == null || LevelExists.Count == 0) return;
+
         if (difficulty != null)
         {
             currentDifficultyIndex = System.Array.IndexOf(difficulties, difficulty);
