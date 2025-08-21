@@ -80,6 +80,8 @@ public class UI : MonoBehaviour
     private string settingsFilePath;
     private static bool checksumManagerInitialized = false;
 
+    private bool isServerAlive;
+
     void Awake()
     {
         if (!checksumManagerInitialized)
@@ -112,8 +114,7 @@ public class UI : MonoBehaviour
         OrderBy.onValueChanged.AddListener(delegate { OnSortChanged(); });
         Genre.onValueChanged.AddListener(delegate { OnSortChanged(); });
 
-        // ★★★ 変更箇所 ★★★
-        // reDownloadボタンにリスナーを追加 (具体的な処理は未実装)
+	// TODO: Add redownload functions.
         if (reDownload != null)
         {
             // reDownload.onClick.AddListener(OnReDownloadClicked);
@@ -141,6 +142,28 @@ public class UI : MonoBehaviour
         });
 
         reDownload.onClick.AddListener(() => StartCoroutine(DownloadAll()));
+
+        // サーバーが生きているかどうかの確認
+        if (!OfflineMode.isOn) {
+            isServerAlive = checkServer();
+        }
+    }
+
+    /// <summary>
+    /// サーバーの疎通確認を行います。
+    /// </summary>
+    private bool checkServer() {
+        var client = new RestClient("https://keichankotaro.com");
+        var request = new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromSeconds(10) };
+        var response = client.Execute(request);
+
+        if (response.StatusCode != System.Net.HttpStatusCode.OK) {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
 
     /// <summary>
@@ -173,7 +196,6 @@ public class UI : MonoBehaviour
         if (OfflineMode.isOn) KeepDownloads.isOn = OfflineMode.isOn;
     }
 
-    // ★★★ 追加メソッド ★★★
     /// <summary>
     /// 現在のトグルの状態をsettings.jsonに保存します。
     /// </summary>
@@ -209,7 +231,6 @@ public class UI : MonoBehaviour
         Anim.SetBool("bOpen", false);
     }
 
-    // ★★★ 修正箇所 ★★★
     private void Setup()
     {
         if (SetupLoading != null) SetupLoading.SetActive(true);
@@ -250,40 +271,48 @@ public class UI : MonoBehaviour
 
         // --- オンラインモードの処理 ---
         Debug.Log("[Setup] Online mode: Fetching data from server.");
-        try
-        {
-            var client = new RestClient($"https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getMusicList/index.cgi?sort={adata.sort}&order={adata.order}&genre={adata.genre}");
-            var request = new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) };
-            var response = client.Execute(request);
-
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
+        if (isServerAlive) {
+            try
             {
-                throw new Exception($"Server returned error: {response.StatusCode}");
+                var client = new RestClient($"https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getMusicList/index.cgi?sort={adata.sort}&order={adata.order}&genre={adata.genre}");
+                var request = new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) };
+                var response = client.Execute(request);
+
+                if (response.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    throw new Exception($"Server returned error: {response.StatusCode}");
+                }
+
+                // 楽曲リストをローカルにキャッシュとして保存
+                string musicListCachePath = Path.Combine(Application.persistentDataPath, "music_list.json");
+                File.WriteAllText(musicListCachePath, response.Content);
+
+                httpJsonObj = JObject.Parse(response.Content);
+                adata.musicsJson = httpJsonObj;
+                Musics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
+
+                var checksumClient = new RestClient("https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getJacket/getChecksum/?command=all");
+                var checksumResponse = checksumClient.Execute(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
+                adata.checksumsJson = JObject.Parse(checksumResponse.Content);
+
+                var audioChecksumClient = new RestClient("https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getPreviewAudio/getChecksum/?command=all");
+                var audioChecksumResponse = audioChecksumClient.Execute(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
+                adata.audioChecksumsJson = JObject.Parse(audioChecksumResponse.Content);
+
+                StartCoroutine(SetupProcessCoroutine());
             }
-
-            // 楽曲リストをローカルにキャッシュとして保存
-            string musicListCachePath = Path.Combine(Application.persistentDataPath, "music_list.json");
-            File.WriteAllText(musicListCachePath, response.Content);
-
-            httpJsonObj = JObject.Parse(response.Content);
-            adata.musicsJson = httpJsonObj;
-            Musics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
-
-            var checksumClient = new RestClient("https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getJacket/getChecksum/?command=all");
-            var checksumResponse = checksumClient.Execute(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
-            adata.checksumsJson = JObject.Parse(checksumResponse.Content);
-
-            var audioChecksumClient = new RestClient("https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getPreviewAudio/getChecksum/?command=all");
-            var audioChecksumResponse = audioChecksumClient.Execute(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
-            adata.audioChecksumsJson = JObject.Parse(audioChecksumResponse.Content);
-
-            StartCoroutine(SetupProcessCoroutine());
+            catch (Exception e)
+            {
+                SetupText.GetComponent<TextMeshProUGUI>().text = $"サーバーに接続できませんでした。{e.Message}";
+                if (SetupLoading != null) SetupLoading.SetActive(false);
+                Debug.LogError($"[Setup] Failed to fetch data from server. Error: {e.Message}");
+            }
         }
-        catch (Exception e)
+        else
         {
-            SetupText.GetComponent<TextMeshProUGUI>().text = $"サーバーに接続できませんでした。{e.Message}";
+            SetupText.GetComponent<TextMeshProUGUI>().text = "サーバーに接続できません。";
             if (SetupLoading != null) SetupLoading.SetActive(false);
-            Debug.LogError($"[Setup] Failed to fetch data from server. Error: {e.Message}");
+            Debug.LogError("[Setup] Failed to connect to server. It seems that the server is down or you are not connected to the internet.");
         }
     }
 

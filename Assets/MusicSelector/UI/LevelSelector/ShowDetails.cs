@@ -106,11 +106,11 @@ public class ShowDetails : MonoBehaviour
 
     private Dictionary<string, Color32> difficultyColors = new Dictionary<string, Color32>
     {
-        { "Another", new Color32(0xb2, 0x00, 0x18, 0xff) }, // #B20018
+        { "Another", new Color32(0xb2, 0x00, 0x18, 0xff) },  // #B20018
         { "Master", new Color32(0xd2, 0x00, 0xff, 0xff) },   // #D200FF
         { "Hard", new Color32(0xff, 0x87, 0x00, 0xff) },     // #FF8700
         { "Easy", new Color32(0x00, 0xff, 0x02, 0xff) },     // #00FF02
-        { "Normal", new Color32(0xff, 0xff, 0xff, 0xff) }
+        { "Normal", new Color32(0xff, 0xff, 0xff, 0xff) }    // #ffffff
     };
 
     private void SetMusicInfo(bool isAutoPlay)
