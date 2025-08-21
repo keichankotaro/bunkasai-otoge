@@ -154,7 +154,7 @@ public class UI : MonoBehaviour
     /// </summary>
     private bool checkServer() {
         var client = new RestClient("https://keichankotaro.com");
-        var request = new RestRequest { Method = Method.GET, Timeout = TimeSpan.FromSeconds(10) };
+        var request = new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromSeconds(10) };
         var response = client.Execute(request);
 
         if (response.StatusCode != System.Net.HttpStatusCode.OK) {
@@ -312,7 +312,7 @@ public class UI : MonoBehaviour
         {
             SetupText.GetComponent<TextMeshProUGUI>().text = "サーバーに接続できません。";
             if (SetupLoading != null) SetupLoading.SetActive(false);
-            Debug.LogError("[Setup] Failed to connect to server. It seems that the server is down or you are not connected to the internet.")
+            Debug.LogError("[Setup] Failed to connect to server. It seems that the server is down or you are not connected to the internet.");
         }
     }
 
