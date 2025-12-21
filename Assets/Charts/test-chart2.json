@@ -1,0 +1,62 @@
+{
+  "maindata": {
+    "music": "Armageddon.mp3",
+    "bpm": 210,
+  },
+  "chartdata": {
+
+    "L1": {
+      "L1data": {
+        "notes": 1,
+      },
+
+      "1": {
+        "aid": 1,
+        "speed": 1.0,
+        "time": 5.0,
+      },
+
+    },
+    "L2": {
+      "L2data": {
+        "notes": "hello",
+      },
+
+      "1": {
+        "aid": 2,
+        "speed": 0.2,
+        "time": 5.0,
+      },
+      "2": {
+        "aid": 5,
+        "speed": 0.05,
+        "time":  2.5,
+      },
+
+    },
+    "L3": {
+      "L3data": {
+        "notes": 1,
+      },
+
+      "1": {
+        "aid": 3,
+        "speed": 0.3,
+        "time": 5.0,
+      },
+
+    },
+    "L4": {
+      "L4data": {
+        "notes": 1,
+      },
+
+      "1": {
+        "aid": 4,
+        "speed": 0.4,
+        "time": 5.0,
+      },
+
+    }
+  }
+}
