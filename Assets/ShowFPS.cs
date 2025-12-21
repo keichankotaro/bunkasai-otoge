@@ -8,17 +8,21 @@ public class ShowFPS : MonoBehaviour
 {
     private float fps;
     public GameObject FPSText;
-    public GameObject graphObject; // LineRenderer‚ğƒAƒ^ƒbƒ`‚·‚éƒIƒuƒWƒFƒNƒg
+    public GameObject graphObject; // LineRendererãŒã‚¢ã‚¿ãƒƒãƒã•ã‚Œã‚‹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
     private LineRenderer lineRenderer;
-    private int maxDataPoints = 100; // ƒOƒ‰ƒt‚É•\¦‚·‚éÅ‘åƒf[ƒ^“_”
-    private List<float> fpsData = new List<float>(); // FPSƒf[ƒ^‚ğŠi”[‚·‚éƒŠƒXƒg
-    private float ax = 3f; // ƒOƒ‰ƒt‚ÌX²‚ÌƒIƒtƒZƒbƒg
-    private float by = -2.4f; // ƒOƒ‰ƒt‚ÌY²‚ÌƒIƒtƒZƒbƒg
+    private int maxDataPoints = 100; // ã‚°ãƒ©ãƒ•ã«è¡¨ç¤ºã™ã‚‹æœ€å¤§ãƒ‡ãƒ¼ã‚¿ç‚¹
+    private List<float> fpsData = new List<float>(); // FPSãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹ãƒªã‚¹ãƒˆ
+    private float ax = 3f; // ã‚°ãƒ©ãƒ•ã®Xè»¸ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
+    private float by = -2.4f; // ã‚°ãƒ©ãƒ•ã®Yè»¸ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
+    private TMPro.TextMeshProUGUI fpsText;
+    private float refreshTimer = 0f;
+    [SerializeField] private float refreshInterval = 0.2f;
 
     // Start is called before the first frame update
     void Start()
     {
-        // LineRenderer‚Ì‰Šúİ’è
+        fpsText = FPSText.GetComponent<TMPro.TextMeshProUGUI>();
+        // LineRendererã®åˆæœŸè¨­å®š
         lineRenderer = graphObject.AddComponent<LineRenderer>();
         lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
         lineRenderer.widthMultiplier = 0.02f;
@@ -30,22 +34,9 @@ public class ShowFPS : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // FPSƒf[ƒ^‚ÌXV
-        fpsData.Add(fps);
-        if (fpsData.Count > maxDataPoints)
-        {
-            fpsData.RemoveAt(0); // ŒÃ‚¢ƒf[ƒ^‚ğíœ
-        }
+        fps = 1f / Time.unscaledDeltaTime;
+        refreshTimer += Time.unscaledDeltaTime;
 
-        // ƒOƒ‰ƒt‚Ì•`‰æ
-        for (int i = 0; i < fpsData.Count; i++)
-        {
-            float x = i * (graphObject.transform.localScale.x / maxDataPoints) + ax;
-            float y = fpsData[i] * (graphObject.transform.localScale.y / 100f) + by; // 100FPS‚ğÅ‘å’l‚Æ‚µ‚ÄƒXƒP[ƒŠƒ“ƒO
-            lineRenderer.SetPosition(i, new Vector3(x, y, 0));
-        }
-
-        fps = 1f / Time.deltaTime;
         if (name == "Main Camera")
         {
             if (adata.ready_to_start)
@@ -83,16 +74,46 @@ public class ShowFPS : MonoBehaviour
             }
         }
 
-        // FPS•\¦‚Ìˆ—
-        if (adata.showFPS)
+        if (refreshTimer < refreshInterval)
         {
-            FPSText.GetComponent<TextMeshProUGUI>().text = "FPS (Press F3 to invisible): " + fps;
-            graphObject.SetActive(true); // ƒOƒ‰ƒt‚ğ•\¦
+            return;
         }
-        else
+
+        refreshTimer = 0f;
+
+        if (!adata.showFPS)
         {
-            FPSText.GetComponent<TextMeshProUGUI>().text = "";
-            graphObject.SetActive(false); // ƒOƒ‰ƒt‚ğ”ñ•\¦
+            if (graphObject.activeSelf)
+            {
+                graphObject.SetActive(false);
+            }
+
+            if (!string.IsNullOrEmpty(fpsText.text))
+            {
+                fpsText.text = string.Empty;
+            }
+
+            fpsData.Clear();
+            return;
         }
+
+        graphObject.SetActive(true);
+
+        // FPSãƒ‡ãƒ¼ã‚¿ã®æ›´æ–°
+        fpsData.Add(fps);
+        if (fpsData.Count > maxDataPoints)
+        {
+            fpsData.RemoveAt(0); // å¤ã„ãƒ‡ãƒ¼ã‚¿ã‚’å‰Šé™¤
+        }
+
+        // ã‚°ãƒ©ãƒ•ã®æç”»
+        for (int i = 0; i < fpsData.Count; i++)
+        {
+            float x = i * (graphObject.transform.localScale.x / maxDataPoints) + ax;
+            float y = fpsData[i] * (graphObject.transform.localScale.y / 100f) + by; // 100FPSã‚’æœ€å¤§å€¤ã¨ã—ã¦ã‚¹ã‚±ãƒ¼ãƒªãƒ³ã‚°
+            lineRenderer.SetPosition(i, new Vector3(x, y, 0));
+        }
+
+        fpsText.text = $"FPS (Press F3 to invisible): {fps:0.0}";
     }
 }

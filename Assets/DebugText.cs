@@ -2,59 +2,64 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using System.Text;
 
 public class DebugText : MonoBehaviour
 {
     // Start is called before the first frame update
-    public static string max_combo = ""; // ‹LqÏ‚İ
-    public static string combo = ""; // ‹LqÏ‚İ
-    public static string max_score = ""; // ‹LqÏ‚İ
-    public static string score = ""; // ‹LqÏ‚İ
-    public static string ratioscore = ""; // ‹LqÏ‚İ
-    public static string max_score_l1 = ""; // ‹LqÏ‚İ
-    public static string max_score_l2 = ""; // ‹LqÏ‚İ
-    public static string max_score_l3 = ""; // ‹LqÏ‚İ
-    public static string max_score_l4 = ""; // ‹LqÏ‚İ
-    public static int score_l1 = 0; // ‹LqÏ‚İ
-    public static int score_l2 = 0; // ‹LqÏ‚İ
-    public static int score_l3 = 0; // ‹LqÏ‚İ
-    public static int score_l4 = 0; // ‹LqÏ‚İ
-    public static string max_l1 = ""; // ‹LqÏ‚İ
-    public static string max_l2 = ""; // ‹LqÏ‚İ
-    public static string max_l3 = ""; // ‹LqÏ‚İ
-    public static string max_l4 = ""; // ‹LqÏ‚İ
-    public static int judged_l1 = 0; // ‹LqÏ‚İ
-    public static int judged_l2 = 0; // ‹LqÏ‚İ
-    public static int judged_l3 = 0; // ‹LqÏ‚İ
-    public static int judged_l4 = 0; // ‹LqÏ‚İ
-    public static int perfect_l1 = 0; // ‹LqÏ‚İ
-    public static int perfect_l2 = 0; // ‹LqÏ‚İ
-    public static int perfect_l3 = 0; // ‹LqÏ‚İ
-    public static int perfect_l4 = 0; // ‹LqÏ‚İ
-    public static int good_l1 = 0; // ‹LqÏ‚İ
-    public static int good_l2 = 0; // ‹LqÏ‚İ
-    public static int good_l3 = 0; // ‹LqÏ‚İ
-    public static int good_l4 = 0; // ‹LqÏ‚İ
-    public static int bad_l1 = 0; // ‹LqÏ‚İ
-    public static int bad_l2 = 0; // ‹LqÏ‚İ
-    public static int bad_l3 = 0; // ‹LqÏ‚İ
-    public static int bad_l4 = 0; // ‹LqÏ‚İ
-    public static int miss_l1 = 0; // ‹LqÏ‚İ
-    public static int miss_l2 = 0; // ‹LqÏ‚İ
-    public static int miss_l3 = 0; // ‹LqÏ‚İ
-    public static int miss_l4 = 0; // ‹LqÏ‚İ
+    public static string max_combo = ""; // æœ€å¤§ã‚³ãƒ³ãƒœ
+    public static string combo = ""; // ã‚³ãƒ³ãƒœæ•°
+    public static string max_score = ""; // æœ€å¤§ã‚¹ã‚³ã‚¢
+    public static string score = ""; // ã‚¹ã‚³ã‚¢
+    public static string ratioscore = ""; // æ¯”ç‡ã‚¹ã‚³ã‚¢
+    public static string max_score_l1 = ""; // æœ€å¤§ã‚¹ã‚³ã‚¢
+    public static string max_score_l2 = ""; // æœ€å¤§ã‚¹ã‚³ã‚¢
+    public static string max_score_l3 = ""; // æœ€å¤§ã‚¹ã‚³ã‚¢
+    public static string max_score_l4 = ""; // æœ€å¤§ã‚¹ã‚³ã‚¢
+    public static int score_l1 = 0; // ã‚¹ã‚³ã‚¢
+    public static int score_l2 = 0; // ã‚¹ã‚³ã‚¢
+    public static int score_l3 = 0; // ã‚¹ã‚³ã‚¢
+    public static int score_l4 = 0; // ã‚¹ã‚³ã‚¢
+    public static string max_l1 = ""; // æœ€å¤§å€¤
+    public static string max_l2 = ""; // æœ€å¤§å€¤
+    public static string max_l3 = ""; // æœ€å¤§å€¤
+    public static string max_l4 = ""; // æœ€å¤§å€¤
+    public static int judged_l1 = 0; // åˆ¤å®šæ•°
+    public static int judged_l2 = 0; // åˆ¤å®šæ•°
+    public static int judged_l3 = 0; // åˆ¤å®šæ•°
+    public static int judged_l4 = 0; // åˆ¤å®šæ•°
+    public static int perfect_l1 = 0; // Perfect
+    public static int perfect_l2 = 0; // Perfect
+    public static int perfect_l3 = 0; // Perfect
+    public static int perfect_l4 = 0; // Perfect
+    public static int good_l1 = 0; // Good
+    public static int good_l2 = 0; // Good
+    public static int good_l3 = 0; // Good
+    public static int good_l4 = 0; // Good
+    public static int bad_l1 = 0; // Bad
+    public static int bad_l2 = 0; // Bad
+    public static int bad_l3 = 0; // Bad
+    public static int bad_l4 = 0; // Bad
+    public static int miss_l1 = 0; // Miss
+    public static int miss_l2 = 0; // Miss
+    public static int miss_l3 = 0; // Miss
+    public static int miss_l4 = 0; // Miss
 
     [SerializeField] GameObject dtxt;
+    private TextMeshProUGUI debugOutput;
+    [SerializeField] private float refreshInterval = 0.1f;
+    private float refreshTimer = 0f;
 
     public static bool isDebugMode = false;
 
     public string getDebugText()
     {
-        return dtxt.GetComponent<TextMeshProUGUI>().text;
+        return debugOutput.text;
     }
 
     void Start()
     {
+        debugOutput = dtxt.GetComponent<TextMeshProUGUI>();
         string[] args = System.Environment.GetCommandLineArgs();
         foreach (string arg in args)
         {
@@ -72,9 +77,19 @@ public class DebugText : MonoBehaviour
     {
         if (!isDebugMode)
         {
-            dtxt.GetComponent<TextMeshProUGUI>().text = "";
+            if (!string.IsNullOrEmpty(debugOutput.text))
+            {
+                debugOutput.text = "";
+            }
             return;
         }
+
+        refreshTimer += Time.unscaledDeltaTime;
+        if (refreshTimer < refreshInterval)
+        {
+            return;
+        }
+        refreshTimer = 0f;
 
         if (!adata.ready_to_start && isDebugMode)
         {
@@ -119,43 +134,46 @@ public class DebugText : MonoBehaviour
 
         if (isDebugMode && adata.ready_to_start)
         {
-            dtxt.GetComponent<TextMeshProUGUI>().text = "Max Combo = " + max_combo + "\n" +
-                "Combo = " + combo + "\n" +
-                "Max Score = " + max_score + "\n" +
-                "Score = " + score + "\n" +
-                "Ratio Score = " + ratioscore + "\n" +
-                "Max Score L1 = " + max_score_l1 + "\n" +
-                "Max Score L2 = " + max_score_l2 + "\n" +
-                "Max Score L3 = " + max_score_l3 + "\n" +
-                "Max Score L4 = " + max_score_l4 + "\n" +
-                "Score L1 = " + score_l1 + "\n" +
-                "Score L2 = " + score_l2 + "\n" +
-                "Score L3 = " + score_l3 + "\n" +
-                "Score L4 = " + score_l4 + "\n" +
-                "Max L1 = " + max_l1 + "\n" +
-                "Max L2 = " + max_l2 + "\n" +
-                "Max L3 = " + max_l3 + "\n" +
-                "Max L4 = " + max_l4 + "\n" +
-                "Judged L1 = " + judged_l1 + "\n" +
-                "Judged L2 = " + judged_l2 + "\n" +
-                "Judged L3 = " + judged_l3 + "\n" +
-                "Judged L4 = " + judged_l4 + "\n" +
-                "Perfect L1 = " + perfect_l1 + "\n" +
-                "Perfect L2 = " + perfect_l2 + "\n" +
-                "Perfect L3 = " + perfect_l3 + "\n" +
-                "Perfect L4 = " + perfect_l4 + "\n" +
-                "Good L1 = " + good_l1 + "\n" +
-                "Good L2 = " + good_l2 + "\n" +
-                "Good L3 = " + good_l3 + "\n" +
-                "Good L4 = " + good_l4 + "\n" +
-                "Bad L1 = " + bad_l1 + "\n" +
-                "Bad L2 = " + bad_l2 + "\n" +
-                "Bad L3 = " + bad_l3 + "\n" +
-                "Bad L4 = " + bad_l4 + "\n" +
-                "Miss L1 = " + miss_l1 + "\n" +
-                "Miss L2 = " + miss_l2 + "\n" +
-                "Miss L3 = " + miss_l3 + "\n" +
-                "Miss L4 = " + miss_l4 + "\n";
+            var builder = new StringBuilder();
+            builder.AppendLine("Max Combo = " + max_combo);
+            builder.AppendLine("Combo = " + combo);
+            builder.AppendLine("Max Score = " + max_score);
+            builder.AppendLine("Score = " + score);
+            builder.AppendLine("Ratio Score = " + ratioscore);
+            builder.AppendLine("Max Score L1 = " + max_score_l1);
+            builder.AppendLine("Max Score L2 = " + max_score_l2);
+            builder.AppendLine("Max Score L3 = " + max_score_l3);
+            builder.AppendLine("Max Score L4 = " + max_score_l4);
+            builder.AppendLine("Score L1 = " + score_l1);
+            builder.AppendLine("Score L2 = " + score_l2);
+            builder.AppendLine("Score L3 = " + score_l3);
+            builder.AppendLine("Score L4 = " + score_l4);
+            builder.AppendLine("Max L1 = " + max_l1);
+            builder.AppendLine("Max L2 = " + max_l2);
+            builder.AppendLine("Max L3 = " + max_l3);
+            builder.AppendLine("Max L4 = " + max_l4);
+            builder.AppendLine("Judged L1 = " + judged_l1);
+            builder.AppendLine("Judged L2 = " + judged_l2);
+            builder.AppendLine("Judged L3 = " + judged_l3);
+            builder.AppendLine("Judged L4 = " + judged_l4);
+            builder.AppendLine("Perfect L1 = " + perfect_l1);
+            builder.AppendLine("Perfect L2 = " + perfect_l2);
+            builder.AppendLine("Perfect L3 = " + perfect_l3);
+            builder.AppendLine("Perfect L4 = " + perfect_l4);
+            builder.AppendLine("Good L1 = " + good_l1);
+            builder.AppendLine("Good L2 = " + good_l2);
+            builder.AppendLine("Good L3 = " + good_l3);
+            builder.AppendLine("Good L4 = " + good_l4);
+            builder.AppendLine("Bad L1 = " + bad_l1);
+            builder.AppendLine("Bad L2 = " + bad_l2);
+            builder.AppendLine("Bad L3 = " + bad_l3);
+            builder.AppendLine("Bad L4 = " + bad_l4);
+            builder.AppendLine("Miss L1 = " + miss_l1);
+            builder.AppendLine("Miss L2 = " + miss_l2);
+            builder.AppendLine("Miss L3 = " + miss_l3);
+            builder.AppendLine("Miss L4 = " + miss_l4);
+
+            debugOutput.text = builder.ToString();
         }
     }
 }
