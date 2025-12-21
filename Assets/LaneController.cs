@@ -8,14 +8,6 @@ using UnityEngine.Events;
 
 public class LaneController : MonoBehaviour
 {
-    private static readonly Dictionary<string, int> lastCompletedNoteIdByLane = new Dictionary<string, int>
-    {
-        { "L1", -1 },
-        { "L2", -1 },
-        { "L3", -1 },
-        { "L4", -1 },
-    };
-
     [Tooltip("Set the lane number (1-4) in the Unity Editor")]
     public int laneIndex; 
 
@@ -43,7 +35,6 @@ public class LaneController : MonoBehaviour
     private JArray change;
 
     private bool LongNoteDetermined = false;
-    private bool hasRegisteredCompletion = false;
     private bool debugDataSent;
 
     // Lane-specific configurations
@@ -59,36 +50,6 @@ public class LaneController : MonoBehaviour
         InitializeLaneData();
         Init_0();
         InitializeNote();
-    }
-
-    private static bool IsPreviousNoteCompleted(string laneId, int currentId)
-    {
-        if (!lastCompletedNoteIdByLane.TryGetValue(laneId, out var lastCompleted))
-        {
-            return false;
-        }
-
-        return currentId == 0 || lastCompleted >= currentId - 1;
-    }
-
-    private void RegisterNoteCompletion()
-    {
-        if (hasRegisteredCompletion)
-        {
-            return;
-        }
-
-        if (lastCompletedNoteIdByLane.ContainsKey(laneJsonId))
-        {
-            lastCompletedNoteIdByLane[laneJsonId] = Math.Max(lastCompletedNoteIdByLane[laneJsonId], id);
-        }
-        else
-        {
-            lastCompletedNoteIdByLane[laneJsonId] = id;
-        }
-
-        hasRegisteredCompletion = true;
-        isPreviousObjectDestroyed = true;
     }
     
     private void InitializeLaneData()
@@ -225,8 +186,7 @@ public class LaneController : MonoBehaviour
         LongNoteDetermined = false;
         EndTask = false;
         debugDataSent = false;
-        hasRegisteredCompletion = false;
-        isPreviousObjectDestroyed = IsPreviousNoteCompleted(laneJsonId, id);
+        isPreviousObjectDestroyed = false; // Reset this flag
 
         return Task.CompletedTask;
     }
@@ -340,7 +300,19 @@ public class LaneController : MonoBehaviour
             // --- Previous Note Check ---
             if (!isPreviousObjectDestroyed)
             {
-                isPreviousObjectDestroyed = IsPreviousNoteCompleted(laneJsonId, id);
+                 if (id > 0)
+                 {
+                    string prev_id = (id - 1).ToString();
+                    // This check is inefficient. For better performance, use an event-based system.
+                    if (GameObject.Find($"{laneJsonId}_{prev_id}") == null && GameObject.Find($"{laneJsonId}_long_{prev_id}") == null)
+                    {
+                        isPreviousObjectDestroyed = true;
+                    }
+                 }
+                 else
+                 {
+                    isPreviousObjectDestroyed = true;
+                 }
             }
 
             if(isPreviousObjectDestroyed && !debugDataSent)
@@ -361,7 +333,6 @@ public class LaneController : MonoBehaviour
                 if (type == "tap" && (arrsec - game_time <= adata.auto))
                 {
                     ShowJudgementEffect("Perfect"); UpdateScore("Perfect");
-                    RegisterNoteCompletion();
                     await RecycleOrDestroy();
                 }
                 else if (type == "long")
@@ -375,7 +346,6 @@ public class LaneController : MonoBehaviour
                     {
                         ShowJudgementEffect("Perfect"); UpdateScore("Perfect");
                         LongNoteDetermined = true;
-                        RegisterNoteCompletion();
                         await RecycleOrDestroy();
                     }
                 }
@@ -396,13 +366,11 @@ public class LaneController : MonoBehaviour
                     else if (timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good"); }
                     else if (timelag <= adata.bad) { ShowJudgementEffect("Bad"); UpdateScore("Bad"); }
                     else { return; } // Input too early/late, ignore
-                    RegisterNoteCompletion();
                     await RecycleOrDestroy();
                 }
                 else if (game_time > arrsec + adata.miss)
                 {
                     ShowJudgementEffect("Miss"); UpdateScore("Miss");
-                    RegisterNoteCompletion();
                     await RecycleOrDestroy();
                 }
             }
@@ -446,7 +414,6 @@ public class LaneController : MonoBehaviour
 
                 if (LongNoteDetermined)
                 {
-                    RegisterNoteCompletion();
                     await RecycleOrDestroy();
                 }
             }
