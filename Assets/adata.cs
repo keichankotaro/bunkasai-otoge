@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEngine;
 public class adata : MonoBehaviour
 {
-    public static string chart = "“ï’®Œn’jq‚ª“|‚¹‚È‚¢- ‹¾‰¹ƒŠƒ“ for LamazeP - Converted";
+    public static string chart = "ï¿½ï’®ï¿½nï¿½jï¿½qï¿½ï¿½ï¿½|ï¿½ï¿½ï¿½È‚ï¿½- ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ for LamazeP - Converted";
     public static float default_speed = 12.0f;
     public static float speed = 12.0f;
     public static float del_hantei = 0.75f;
@@ -31,13 +31,19 @@ public class adata : MonoBehaviour
     public static int clicked_L3;
     public static int clicked_L4;
 
-    // ”»’è
+    // Prevention of double judgement in the same frame (Anti-Ghosting)
+    public static int lastJudgedFrame_L1 = -1;
+    public static int lastJudgedFrame_L2 = -1;
+    public static int lastJudgedFrame_L3 = -1;
+    public static int lastJudgedFrame_L4 = -1;
+
+    // ï¿½ï¿½ï¿½ï¿½
     public static float auto = 0.001f;
     public static float perfect = 0.04f;
     public static float good = 0.08f;
     public static float bad = 0.15f;
     public static float miss = 0.22f;
-    // ƒƒ“ƒOI“_”»’è
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½Iï¿½_ï¿½ï¿½ï¿½ï¿½
     public static float longEndTimeLag = 0.07f;
 
     public static bool ready_to_start = false;
@@ -68,38 +74,38 @@ public class adata : MonoBehaviour
     public static string ActivationCode = "";
     public static bool Activated = true;
 
-    // ÅŒã‚ÌID
+    // ï¿½ÅŒï¿½ï¿½ID
     public static int LastID_L1;
     public static int LastID_L2;
     public static int LastID_L3;
     public static int LastID_L4;
 
-    // json(•ˆ–Êƒf[ƒ^)—Ş
+    // json(ï¿½ï¿½ï¿½Êƒfï¿½[ï¿½^)ï¿½ï¿½
     public static string loadjson;
     public static JObject jsonObj;
     public static JObject musicsJson;
 
-    // ƒ[ƒfƒBƒ“ƒO‚Ì‚»‚ê
+    // ï¿½ï¿½ï¿½[ï¿½fï¿½Bï¿½ï¿½ï¿½Oï¿½Ì‚ï¿½ï¿½ï¿½
     public static int loaded = 0;
 
-    // ƒ\[ƒgEi‚è‚İ
+    // ï¿½\ï¿½[ï¿½gï¿½Eï¿½iï¿½èï¿½ï¿½
     public static string sort = "name";
     public static string order = "asc";
     public static string genre = "all";
 
-    // UIŠÖ˜A
+    // UIï¿½Ö˜A
     public static JObject checksumsJson;
-    public static JObject audioChecksumsJson; // ƒvƒŒƒrƒ…[‰¹Œ¹‚Ìƒ`ƒFƒbƒNƒTƒ€‚ğˆêŠ‡‚Å•Û‘¶‚µ‚Ü‚·
-    public static Dictionary<string, AudioClip> previewAudioCache = new Dictionary<string, AudioClip>(); // ƒ[ƒh‚µ‚½‰¹Œ¹‚ğƒƒ‚ƒŠ‚ÉƒLƒƒƒbƒVƒ…‚µ‚Ü‚·
-    public static float previewFadeDuration = 0.5f; // ƒtƒF[ƒhƒCƒ“EƒAƒEƒg‚ÌŠÔ‚Å‚·
+    public static JObject audioChecksumsJson; // ï¿½vï¿½ï¿½ï¿½rï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Ìƒ`ï¿½Fï¿½bï¿½Nï¿½Tï¿½ï¿½ï¿½ï¿½ï¿½êŠ‡ï¿½Å•Û‘ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½
+    public static Dictionary<string, AudioClip> previewAudioCache = new Dictionary<string, AudioClip>(); // ï¿½ï¿½ï¿½[ï¿½hï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÉƒLï¿½ï¿½ï¿½bï¿½Vï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½
+    public static float previewFadeDuration = 0.5f; // ï¿½tï¿½Fï¿½[ï¿½hï¿½Cï¿½ï¿½ï¿½Eï¿½Aï¿½Eï¿½gï¿½Ìï¿½ï¿½Ô‚Å‚ï¿½
     public static int audioLoaded = 0;
 
-    // ‹­§I—¹
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Iï¿½ï¿½
     public static bool ForceFinish = false;
     public static bool MusicStarted = false;
     public static bool Process = false;
 
-    // ƒIƒtƒ‰ƒCƒ“ƒ‚[ƒh
+    // ï¿½Iï¿½tï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½h
     public static bool isOfflineMode = false;
     public static bool keepDownloads = false;
     public static string jacketPath = Path.Combine(Application.persistentDataPath, "Jackets");
@@ -107,7 +113,7 @@ public class adata : MonoBehaviour
     public static string previewsPath = Path.Combine(Application.persistentDataPath, "Previews");
     public static string chartsPath = Path.Combine(Application.persistentDataPath, "Charts");
 
-    // ƒŠƒUƒ‹ƒg
+    // ï¿½ï¿½ï¿½Uï¿½ï¿½ï¿½g
     public static bool showResult = false;
     public static string Difficulty = "";
 
@@ -125,7 +131,7 @@ public class adata : MonoBehaviour
     public static float miss = 40.0f;
     */
 
-    // ƒQ[ƒ€ƒRƒ“ƒgƒ[ƒ‰[—Ş
+    // ï¿½Qï¿½[ï¿½ï¿½ï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½[ï¿½ï¿½
     public static KeyCode ControlerStart = KeyCode.Joystick1Button0;
     public static KeyCode ControlerLine1 = KeyCode.Joystick1Button1;
     public static KeyCode ControlerLine2 = KeyCode.Joystick1Button2;
@@ -133,4 +139,75 @@ public class adata : MonoBehaviour
     public static KeyCode ControlerLine4 = KeyCode.Joystick1Button4;
     public static KeyCode ControlerFX1 = KeyCode.Joystick1Button5;
     public static KeyCode ControlerFX2 = KeyCode.Joystick1Button6;
+
+    // --- High Performance Data Cache ---
+    public static Dictionary<int, NoteInfo> L1Notes = new Dictionary<int, NoteInfo>();
+    public static Dictionary<int, NoteInfo> L2Notes = new Dictionary<int, NoteInfo>();
+    public static Dictionary<int, NoteInfo> L3Notes = new Dictionary<int, NoteInfo>();
+    public static Dictionary<int, NoteInfo> L4Notes = new Dictionary<int, NoteInfo>();
+
+public class NoteInfo
+{
+    public int aid;
+    public float speed;
+    public float time;
+    public string type;
+    public float endtime;
+    public bool s_change;
+    public JArray changes;
+    
+    // Raw JObject for fallback/debugging or sending to debugger
+    public JObject rawData;
+}
+
+    public static void LoadChartData(JObject json)
+    {
+        // Clear previous data
+        L1Notes.Clear();
+        L2Notes.Clear();
+        L3Notes.Clear();
+        L4Notes.Clear();
+
+        if (json["chartdata"] == null) return;
+
+        // Helper to parse a lane
+        void ParseLane(string laneKey, Dictionary<int, NoteInfo> targetDict)
+        {
+            if (json["chartdata"][laneKey] == null) return;
+
+            JToken laneData = json["chartdata"][laneKey];
+            foreach (JToken child in laneData.Children())
+            {
+                if (child is JProperty prop)
+                {
+                    // Skip metadata keys like "L1data" or "notes" if they are mixed in
+                    if (int.TryParse(prop.Name, out int id))
+                    {
+                        JToken noteJson = prop.Value;
+                        NoteInfo info = new NoteInfo();
+                        info.aid = (int?)noteJson["aid"] ?? 0;
+                        info.speed = (float?)noteJson["speed"] ?? 0f;
+                        info.time = (float?)noteJson["time"] ?? 0f;
+                        info.type = noteJson["type"]?.ToString() ?? "tap";
+                        info.endtime = (float?)noteJson["endtime"] ?? 0f;
+                        info.s_change = (bool?)noteJson["s_change"] ?? false;
+                        if (info.s_change)
+                        {
+                            info.changes = noteJson["changes"] as JArray;
+                        }
+                        info.rawData = noteJson as JObject;
+
+                        targetDict[id] = info;
+                    }
+                }
+            }
+        }
+
+        ParseLane("L1", L1Notes);
+        ParseLane("L2", L2Notes);
+        ParseLane("L3", L3Notes);
+        ParseLane("L4", L4Notes);
+        
+        Debug.Log($"[adata] Cached Chart Data. L1:{L1Notes.Count}, L2:{L2Notes.Count}, L3:{L3Notes.Count}, L4:{L4Notes.Count}");
+    }
 }

@@ -78,21 +78,29 @@ public class L1_duplication : MonoBehaviour
         notecnt = int.Parse(jsonObj["chartdata"]["L1"]["L1data"]["notes"] + "");
         adata.l1notes += notecnt;
         objs = new List<GameObject>();
+        
+        // Use cached data
+        var noteCache = adata.L1Notes;
+
         if (notecnt > adata.maximum_notes)
         {
             for (int i = 1; i <= adata.maximum_notes; i++)
             {
-                if (jsonObj["chartdata"]["L1"][i + ""]["type"].ToString() == "tap")
+                if (noteCache.ContainsKey(i))
                 {
-                    objs.Add((GameObject)Instantiate(prefab));
-                    objs[i - 1].name = "L1_" + i;
-                    adata.LastID_L1 = i;
-                }
-                else if (jsonObj["chartdata"]["L1"][i + ""]["type"].ToString() == "long")
-                {
-                    objs.Add((GameObject)Instantiate(prefab_long));
-                    objs[i - 1].name = "L1-long_" + i;
-                    adata.LastID_L1 = i;
+                    string type = noteCache[i].type;
+                    if (type == "tap")
+                    {
+                        objs.Add((GameObject)Instantiate(prefab));
+                        objs[i - 1].name = "L1_" + i;
+                        adata.LastID_L1 = i;
+                    }
+                    else if (type == "long")
+                    {
+                        objs.Add((GameObject)Instantiate(prefab_long));
+                        objs[i - 1].name = "L1-long_" + i;
+                        adata.LastID_L1 = i;
+                    }
                 }
             }
             now_count += adata.maximum_notes;
@@ -101,17 +109,21 @@ public class L1_duplication : MonoBehaviour
         {
             for (int i = 1; i <= notecnt; i++)
             {
-                if (jsonObj["chartdata"]["L1"][i + ""]["type"].ToString() == "tap")
+                if (noteCache.ContainsKey(i))
                 {
-                    objs.Add((GameObject)Instantiate(prefab));
-                    objs[i - 1].name = "L1_" + i;
-                    adata.LastID_L1 = i;
-                }
-                else if (jsonObj["chartdata"]["L1"][i + ""]["type"].ToString() == "long")
-                {
-                    objs.Add((GameObject)Instantiate(prefab_long));
-                    objs[i - 1].name = "L1-long_" + i;
-                    adata.LastID_L1 = i;
+                    string type = noteCache[i].type;
+                    if (type == "tap")
+                    {
+                        objs.Add((GameObject)Instantiate(prefab));
+                        objs[i - 1].name = "L1_" + i;
+                        adata.LastID_L1 = i;
+                    }
+                    else if (type == "long")
+                    {
+                        objs.Add((GameObject)Instantiate(prefab_long));
+                        objs[i - 1].name = "L1-long_" + i;
+                        adata.LastID_L1 = i;
+                    }
                 }
             }
             now_count += notecnt;

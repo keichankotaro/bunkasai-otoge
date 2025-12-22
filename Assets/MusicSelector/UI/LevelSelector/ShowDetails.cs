@@ -16,30 +16,30 @@ public class ShowDetails : MonoBehaviour
     public static string Music;
     public static List<bool> LevelExists = new List<bool>();
 
-    // •Ï‰»Šm”F—p
+    // ï¿½Ï‰ï¿½ï¿½mï¿½Fï¿½p
     private string tMusic;
 
-    // ŠeíƒIƒuƒWƒFƒNƒg
+    // ï¿½eï¿½ï¿½Iï¿½uï¿½Wï¿½Fï¿½Nï¿½g
     public GameObject Jacket;
     public GameObject MusicTitle;
     public GameObject Composer;
     public GameObject Charter;
-    // ƒŒƒxƒ‹—Ş
+    // ï¿½ï¿½ï¿½xï¿½ï¿½ï¿½ï¿½
     public GameObject ELvl;
     public GameObject HLvl;
     public GameObject MLvl;
     public GameObject ALvl;
-    // ƒ{ƒ^ƒ“
+    // ï¿½{ï¿½^ï¿½ï¿½
     public Button EBtn;
     public Button HBtn;
     public Button MBtn;
     public Button ABtn;
     public Button StartBtn;
     public Toggle AutoplayBtn;
-    // Json—p•Ï”
+    // Jsonï¿½pï¿½Ïï¿½
     private JObject jsonObj;
     private string loadjson;
-    // ‚»‚Ì‘¼•Ï”
+    // ï¿½ï¿½ï¿½Ì‘ï¿½ï¿½Ïï¿½
     private int currentDifficultyIndex = 0;
     private bool oo = false;
     private string[] difficulties = { "Another", "Master", "Hard", "Easy" };
@@ -48,13 +48,13 @@ public class ShowDetails : MonoBehaviour
     public GameObject PlayerUI;
     private string jacketCachePath;
 
-    // PlayerUI—pƒf[ƒ^
+    // PlayerUIï¿½pï¿½fï¿½[ï¿½^
     public GameObject PUIJacket;
     public GameObject PUILevel;
     public GameObject PUIMusic;
     public GameObject PUIComposer;
 
-    // ƒ[ƒfƒBƒ“ƒO‚Ì‚»‚ê
+    // ï¿½ï¿½ï¿½[ï¿½fï¿½Bï¿½ï¿½ï¿½Oï¿½Ì‚ï¿½ï¿½ï¿½
     public GameObject LoadingText;
     public static bool getted;
     private string nmusic;
@@ -64,7 +64,7 @@ public class ShowDetails : MonoBehaviour
     private bool isAutoPlay;
     public static bool alreadyRequest = false;
 
-    // š’Ç‰Á: UIƒRƒ“ƒgƒ[ƒ‰[‚Ö‚ÌQÆ
+    // ï¿½ï¿½ï¿½Ç‰ï¿½: UIï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½[ï¿½Ö‚ÌQï¿½ï¿½
     private UI uiController;
 
     private void Awake()
@@ -80,26 +80,26 @@ public class ShowDetails : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // š’Ç‰Á: UIƒRƒ“ƒgƒ[ƒ‰[‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‚ğæ“¾
+        // ï¿½ï¿½ï¿½Ç‰ï¿½: UIï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½[ï¿½ÌƒCï¿½ï¿½ï¿½Xï¿½^ï¿½ï¿½ï¿½Xï¿½ï¿½ï¿½æ“¾
         uiController = FindObjectOfType<UI>();
 
-        // ƒ{ƒ^ƒ“‚Ì onClick ƒŠƒXƒi[
+        // ï¿½{ï¿½^ï¿½ï¿½ï¿½ï¿½ onClick ï¿½ï¿½ï¿½Xï¿½iï¿½[
         EBtn.onClick.AddListener(() => { UpdateUI("Easy"); });
         HBtn.onClick.AddListener(() => { UpdateUI("Hard"); });
         MBtn.onClick.AddListener(() => { UpdateUI("Master"); });
         ABtn.onClick.AddListener(() => { UpdateUI("Another"); });
 
-        UpdateUI(); // ‰Šúó‘Ô‚Å UI ‚ğXV
+        UpdateUI(); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô‚ï¿½ UI ï¿½ï¿½ï¿½Xï¿½V
 
         UpdateButtonColor(EBtn, "Normal");
         UpdateButtonColor(HBtn, "Normal");
         UpdateButtonColor(MBtn, "Normal");
         UpdateButtonColor(ABtn, "Normal");
-        Charter.GetComponent<TextMeshProUGUI>().text = "•ˆ–Ê§ìF";
+        Charter.GetComponent<TextMeshProUGUI>().text = "ï¿½ï¿½ï¿½Êï¿½ï¿½ï¿½F";
         MusicTitle.GetComponent<TextMeshProUGUI>().text = Music;
     }
 
-    void OnEBtnClick() { } // ‹ó‚Ìƒƒ\ƒbƒh
+    void OnEBtnClick() { } // ï¿½ï¿½Ìƒï¿½ï¿½\ï¿½bï¿½h
     void OnHBtnClick() { }
     void OnMBtnClick() { }
     void OnABtnClick() { }
@@ -115,7 +115,7 @@ public class ShowDetails : MonoBehaviour
 
     private void SetMusicInfo(bool isAutoPlay)
     {
-        // š’Ç‰Á: ƒvƒŒƒrƒ…[Ä¶‚ğ’â~
+        // ï¿½ï¿½ï¿½Ç‰ï¿½: ï¿½vï¿½ï¿½ï¿½rï¿½ï¿½ï¿½[ï¿½Äï¿½ï¿½ï¿½ï¿½~
         if (uiController != null)
         {
             uiController.StopPreviewAudio();
@@ -142,6 +142,7 @@ public class ShowDetails : MonoBehaviour
             {
                 JObject jsonObj = JObject.Parse(loadjson);
                 adata.jsonObj = jsonObj;
+                adata.LoadChartData(jsonObj);
                 JToken maindata = jsonObj["maindata"];
                 if (jsonObj["maindata"] != null)
                 {
@@ -182,6 +183,7 @@ public class ShowDetails : MonoBehaviour
                 {
                     JObject jsonObj = JObject.Parse(loadjson);
                     adata.jsonObj = jsonObj;
+                    adata.LoadChartData(jsonObj);
                     JToken maindata = jsonObj["maindata"];
 
                     if (jsonObj["maindata"] != null)
@@ -200,7 +202,7 @@ public class ShowDetails : MonoBehaviour
             }
             else
             {
-                Debug.LogError("ƒŠƒNƒGƒXƒg‚É¸”s‚µ‚Ü‚µ‚½BÄs‚µ‚Ä‚¢‚Ü‚·B");
+                Debug.LogError("ï¿½ï¿½ï¿½Nï¿½Gï¿½Xï¿½gï¿½Éï¿½ï¿½sï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½ï¿½Bï¿½Äï¿½ï¿½sï¿½ï¿½ï¿½Ä‚ï¿½ï¿½Ü‚ï¿½ï¿½B");
                 SetMusicInfo(isAutoPlay);
             }
         }
@@ -214,7 +216,7 @@ public class ShowDetails : MonoBehaviour
             if (adata.isOfflineMode || adata.keepDownloads)
             {
                 byte[] fileData = null;
-                // ƒ_ƒEƒ“ƒ[ƒhƒf[ƒ^‚©‚çƒWƒƒƒPƒbƒg‚ğ“Ç‚İ‚Ş
+                // ï¿½_ï¿½Eï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½hï¿½fï¿½[ï¿½^ï¿½ï¿½ï¿½ï¿½Wï¿½ï¿½ï¿½Pï¿½bï¿½gï¿½ï¿½Ç‚İï¿½ï¿½ï¿½
                 if (adata.isOfflineMode)
                 {
                     try
@@ -267,14 +269,14 @@ public class ShowDetails : MonoBehaviour
             }
             else
             {
-                Debug.Log("ƒWƒƒƒPƒbƒg‰æ‘œ‚Ìæ“¾");
+                Debug.Log("ï¿½Wï¿½ï¿½ï¿½Pï¿½bï¿½gï¿½æ‘œï¿½Ìæ“¾");
                 //alreadyRequest = true;
                 if (adata.isOfflineMode || adata.keepDownloads)
                 {
                     Debug.LogWarning("[SetText] Offline mode or cache keep mode is enabled. Skipping jacket download.");
                     if (File.Exists(Path.Combine(jacketCachePath, Music + ".jpg")))
                     {
-                        // ƒLƒƒƒbƒVƒ…‚©‚çƒWƒƒƒPƒbƒg‚ğ“Ç‚İ‚Ş
+                        // ï¿½Lï¿½ï¿½ï¿½bï¿½Vï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Wï¿½ï¿½ï¿½Pï¿½bï¿½gï¿½ï¿½Ç‚İï¿½ï¿½ï¿½
                         byte[] fileData = File.ReadAllBytes(Path.Combine(jacketCachePath, Music + ".jpg"));
                         Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                         texture.LoadImage(fileData);
@@ -286,7 +288,7 @@ public class ShowDetails : MonoBehaviour
                     }
                     else if (File.Exists(Path.Combine(jacketCachePath, Music + ".png")))
                     {
-                        // ƒLƒƒƒbƒVƒ…‚©‚çƒWƒƒƒPƒbƒg‚ğ“Ç‚İ‚Ş
+                        // ï¿½Lï¿½ï¿½ï¿½bï¿½Vï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Wï¿½ï¿½ï¿½Pï¿½bï¿½gï¿½ï¿½Ç‚İï¿½ï¿½ï¿½
                         byte[] fileData = File.ReadAllBytes(Path.Combine(jacketCachePath, Music + ".png"));
                         Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                         texture.LoadImage(fileData);
@@ -339,7 +341,7 @@ public class ShowDetails : MonoBehaviour
                     }
                     else
                     {
-                        Debug.LogWarning("ƒWƒƒƒPƒbƒg‰æ‘œ‚ğæ“¾‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½B");
+                        Debug.LogWarning("ï¿½Wï¿½ï¿½ï¿½Pï¿½bï¿½gï¿½æ‘œï¿½ï¿½ï¿½æ“¾ï¿½Å‚ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½Å‚ï¿½ï¿½ï¿½ï¿½B");
                     }
                 }
             }
@@ -370,7 +372,7 @@ public class ShowDetails : MonoBehaviour
                 UpdateButtonColor(MBtn, "Normal");
                 UpdateButtonColor(ABtn, "Normal");
 
-                Charter.GetComponent<TextMeshProUGUI>().text = "•ˆ–Ê§ìF";
+                Charter.GetComponent<TextMeshProUGUI>().text = "ï¿½ï¿½ï¿½Êï¿½ï¿½ï¿½F";
                 MusicTitle.GetComponent<TextMeshProUGUI>().text = Music;
 
                 oo = false;
@@ -405,7 +407,7 @@ public class ShowDetails : MonoBehaviour
                     UpdateButtonColor(MBtn, "Normal");
                     UpdateButtonColor(ABtn, "Normal");
 
-                    Charter.GetComponent<TextMeshProUGUI>().text = "•ˆ–Ê§ìF";
+                    Charter.GetComponent<TextMeshProUGUI>().text = "ï¿½ï¿½ï¿½Êï¿½ï¿½ï¿½F";
                     MusicTitle.GetComponent<TextMeshProUGUI>().text = Music;
 
                     alreadyRequest = false;
@@ -510,7 +512,7 @@ public class ShowDetails : MonoBehaviour
             {
                 List<string> musics = (adata.musicsJson["charts"] as JArray).ToObject<List<string>>();
                 Composer.GetComponent<TextMeshProUGUI>().text = adata.musicsJson["composers"][musics.IndexOf(Music)].ToString();
-                return; // 1‚ÂŒ©‚Â‚¯‚½‚çI—¹
+                return; // 1ï¿½ÂŒï¿½ï¿½Â‚ï¿½ï¿½ï¿½ï¿½ï¿½Iï¿½ï¿½
             }
         }
     }
@@ -519,6 +521,6 @@ public class ShowDetails : MonoBehaviour
     {
         var levels = new List<string> { "Another", "Master", "Hard", "Easy" };
         List<string> musics = (adata.musicsJson["charts"] as JArray).ToObject<List<string>>();
-        Charter.GetComponent<TextMeshProUGUI>().text = "•ˆ–Ê§ì: " + adata.musicsJson["charters"][musics.IndexOf(Music)][levels.IndexOf(difficulty)];
+        Charter.GetComponent<TextMeshProUGUI>().text = "ï¿½ï¿½ï¿½Êï¿½ï¿½ï¿½: " + adata.musicsJson["charters"][musics.IndexOf(Music)][levels.IndexOf(difficulty)];
     }
 }
