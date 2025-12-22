@@ -8,16 +8,21 @@ using UnityEngine.Events;
 public class SpeedManager : MonoBehaviour
 {
     private JObject jsonObj;
+    // 速度変化のデータ
     private JArray Changes;
     private JArray nullarray;
     private int i;
+    // 変化回数カウント
     private int changed = 0;
+    // セットアップ完了フラグ
     private bool setupped = false;
+    // 変化の有無
     private bool change = false;
 
     // Start is called before the first frame update
     private void Setup()
     {
+        // ここからセットアップ
         changed = 0;
         string chart = adata.chart;
         //string loadjson = Resources.Load<TextAsset>("Charts/" + chart).ToString();
@@ -33,6 +38,7 @@ public class SpeedManager : MonoBehaviour
         {
             change = false;
         }
+        // ここまでセットアップ
     }
 
     private IEnumerator DelayCoroutine(float seconds, UnityAction callback)
@@ -44,6 +50,7 @@ public class SpeedManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // ここからスピード更新処理
         if (adata.ready_to_start)
         {
             if (!setupped)
@@ -132,11 +139,11 @@ public class SpeedManager : MonoBehaviour
         {
             setupped = false;
         }
+        // ここまでスピード更新処理
     }
 
     private void OnDestroy()
     {
-        // Destroy���ɓo�^����Invoke�����ׂăL�����Z��
         CancelInvoke();
     }
 }

@@ -12,8 +12,11 @@ public class ScoreManeger : MonoBehaviour
 {
     [SerializeField] GameObject score_t;
     [SerializeField] GameObject combo_t;
+    // スコア
     public static int score = 0;
+    // コンボ数
     public static int combo = 0;
+    // 総ノーツ数
     public static int notes;
     private int maxscore;
     public static int ratioscore;
@@ -24,6 +27,7 @@ public class ScoreManeger : MonoBehaviour
     // Start is called before the first frame update
     private void Setup()
     {
+        // ここからスコア初期化
         string chart = adata.chart;
         notes = 0;
         int l1_notes = 0;
@@ -116,11 +120,13 @@ public class ScoreManeger : MonoBehaviour
             DebugText.max_score_l4 = (l4_notes * 5) + "";
         }
         setupped = true;
+        // ここまでスコア初期化
     }
 
     // Update is called once per frame
     void Update()
     {
+        // ここからスコア更新
         if (adata.ready_to_start)
         {
             if (!setupped)
@@ -168,5 +174,6 @@ public class ScoreManeger : MonoBehaviour
         {
             setupped = false;
         }
+        // ここまでスコア更新
     }
 }

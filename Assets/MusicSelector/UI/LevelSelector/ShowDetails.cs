@@ -16,30 +16,28 @@ public class ShowDetails : MonoBehaviour
     public static string Music;
     public static List<bool> LevelExists = new List<bool>();
 
-    // �ω��m�F�p
     private string tMusic;
 
-    // �e��I�u�W�F�N�g
     public GameObject Jacket;
     public GameObject MusicTitle;
     public GameObject Composer;
     public GameObject Charter;
-    // ���x����
+
     public GameObject ELvl;
     public GameObject HLvl;
     public GameObject MLvl;
     public GameObject ALvl;
-    // �{�^��
+
     public Button EBtn;
     public Button HBtn;
     public Button MBtn;
     public Button ABtn;
     public Button StartBtn;
     public Toggle AutoplayBtn;
-    // Json�p�ϐ�
+
     private JObject jsonObj;
     private string loadjson;
-    // ���̑��ϐ�
+
     private int currentDifficultyIndex = 0;
     private bool oo = false;
     private string[] difficulties = { "Another", "Master", "Hard", "Easy" };
@@ -48,13 +46,13 @@ public class ShowDetails : MonoBehaviour
     public GameObject PlayerUI;
     private string jacketCachePath;
 
-    // PlayerUI�p�f�[�^
+
     public GameObject PUIJacket;
     public GameObject PUILevel;
     public GameObject PUIMusic;
     public GameObject PUIComposer;
 
-    // ���[�f�B���O�̂���
+
     public GameObject LoadingText;
     public static bool getted;
     private string nmusic;
@@ -64,7 +62,7 @@ public class ShowDetails : MonoBehaviour
     private bool isAutoPlay;
     public static bool alreadyRequest = false;
 
-    // ���ǉ�: UI�R���g���[���[�ւ̎Q��
+
     private UI uiController;
 
     private void Awake()
@@ -80,16 +78,14 @@ public class ShowDetails : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // ���ǉ�: UI�R���g���[���[�̃C���X�^���X���擾
         uiController = FindObjectOfType<UI>();
 
-        // �{�^���� onClick ���X�i�[
         EBtn.onClick.AddListener(() => { UpdateUI("Easy"); });
         HBtn.onClick.AddListener(() => { UpdateUI("Hard"); });
         MBtn.onClick.AddListener(() => { UpdateUI("Master"); });
         ABtn.onClick.AddListener(() => { UpdateUI("Another"); });
 
-        UpdateUI(); // ������Ԃ� UI ���X�V
+        UpdateUI();
 
         UpdateButtonColor(EBtn, "Normal");
         UpdateButtonColor(HBtn, "Normal");
@@ -99,7 +95,7 @@ public class ShowDetails : MonoBehaviour
         MusicTitle.GetComponent<TextMeshProUGUI>().text = Music;
     }
 
-    void OnEBtnClick() { } // ��̃��\�b�h
+    void OnEBtnClick() { }
     void OnHBtnClick() { }
     void OnMBtnClick() { }
     void OnABtnClick() { }
@@ -115,7 +111,6 @@ public class ShowDetails : MonoBehaviour
 
     private void SetMusicInfo(bool isAutoPlay)
     {
-        // ���ǉ�: �v���r���[�Đ����~
         if (uiController != null)
         {
             uiController.StopPreviewAudio();
@@ -216,7 +211,6 @@ public class ShowDetails : MonoBehaviour
             if (adata.isOfflineMode || adata.keepDownloads)
             {
                 byte[] fileData = null;
-                // �_�E�����[�h�f�[�^����W���P�b�g��ǂݍ���
                 if (adata.isOfflineMode)
                 {
                     try
@@ -269,14 +263,12 @@ public class ShowDetails : MonoBehaviour
             }
             else
             {
-                Debug.Log("�W���P�b�g�摜�̎擾");
                 //alreadyRequest = true;
                 if (adata.isOfflineMode || adata.keepDownloads)
                 {
                     Debug.LogWarning("[SetText] Offline mode or cache keep mode is enabled. Skipping jacket download.");
                     if (File.Exists(Path.Combine(jacketCachePath, Music + ".jpg")))
                     {
-                        // �L���b�V������W���P�b�g��ǂݍ���
                         byte[] fileData = File.ReadAllBytes(Path.Combine(jacketCachePath, Music + ".jpg"));
                         Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                         texture.LoadImage(fileData);
@@ -288,7 +280,6 @@ public class ShowDetails : MonoBehaviour
                     }
                     else if (File.Exists(Path.Combine(jacketCachePath, Music + ".png")))
                     {
-                        // �L���b�V������W���P�b�g��ǂݍ���
                         byte[] fileData = File.ReadAllBytes(Path.Combine(jacketCachePath, Music + ".png"));
                         Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                         texture.LoadImage(fileData);
@@ -341,7 +332,7 @@ public class ShowDetails : MonoBehaviour
                     }
                     else
                     {
-                        Debug.LogWarning("�W���P�b�g�摜���擾�ł��܂���ł����B");
+                        // Failed to download jacket image
                     }
                 }
             }
@@ -407,7 +398,7 @@ public class ShowDetails : MonoBehaviour
                     UpdateButtonColor(MBtn, "Normal");
                     UpdateButtonColor(ABtn, "Normal");
 
-                    Charter.GetComponent<TextMeshProUGUI>().text = "���ʐ���F";
+                    Charter.GetComponent<TextMeshProUGUI>().text = "譜面制作:";
                     MusicTitle.GetComponent<TextMeshProUGUI>().text = Music;
 
                     alreadyRequest = false;
@@ -521,6 +512,6 @@ public class ShowDetails : MonoBehaviour
     {
         var levels = new List<string> { "Another", "Master", "Hard", "Easy" };
         List<string> musics = (adata.musicsJson["charts"] as JArray).ToObject<List<string>>();
-        Charter.GetComponent<TextMeshProUGUI>().text = "���ʐ���: " + adata.musicsJson["charters"][musics.IndexOf(Music)][levels.IndexOf(difficulty)];
+        Charter.GetComponent<TextMeshProUGUI>().text = "譜面制作: " + adata.musicsJson["charters"][musics.IndexOf(Music)][levels.IndexOf(difficulty)];
     }
 }
