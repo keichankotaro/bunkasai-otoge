@@ -17,6 +17,7 @@ public class LaneController : MonoBehaviour
     private int id;
     private JObject jsonObj;
     private float game_time = 0;
+    private adata.NoteInfo currentNoteInfo;
     private JObject cd;
     private float time_reming;
     private float now;
@@ -45,6 +46,35 @@ public class LaneController : MonoBehaviour
     private string raycastTargetName;
     private Vector3 judgeEffectPosition;
 
+    // Cached data reference
+    private Dictionary<int, adata.NoteInfo> currentLaneNotes;
+
+    // Helper to access static anti-ghosting variables
+    private int LastJudgedFrame
+    {
+        get
+        {
+            switch (laneIndex)
+            {
+                case 1: return adata.lastJudgedFrame_L1;
+                case 2: return adata.lastJudgedFrame_L2;
+                case 3: return adata.lastJudgedFrame_L3;
+                case 4: return adata.lastJudgedFrame_L4;
+                default: return -1;
+            }
+        }
+        set
+        {
+            switch (laneIndex)
+            {
+                case 1: adata.lastJudgedFrame_L1 = value; break;
+                case 2: adata.lastJudgedFrame_L2 = value; break;
+                case 3: adata.lastJudgedFrame_L3 = value; break;
+                case 4: adata.lastJudgedFrame_L4 = value; break;
+            }
+        }
+    }
+
     void Start()
     {
         InitializeLaneData();
@@ -56,6 +86,15 @@ public class LaneController : MonoBehaviour
     {
         // Adjust index to be 0-based for arrays
         int index = laneIndex - 1;
+
+        switch (laneIndex)
+        {
+            case 1: currentLaneNotes = adata.L1Notes; break;
+            case 2: currentLaneNotes = adata.L2Notes; break;
+            case 3: currentLaneNotes = adata.L3Notes; break;
+            case 4: currentLaneNotes = adata.L4Notes; break;
+            default: Debug.LogError("Invalid Lane Index"); break;
+        }
 
         string[] laneJsonIds = { "L1", "L2", "L3", "L4" };
         int[] totalNotes = { adata.l1notes, adata.l2notes, adata.l3notes, adata.l4notes };
@@ -104,12 +143,18 @@ public class LaneController : MonoBehaviour
         }
         else
         {
-            JObject nextNoteData = JObject.Parse(adata.jsonObj["chartdata"][laneJsonId][newId + ""].ToString());
-            string nextNoteType = nextNoteData["type"].ToString();
-
-            name = $"{laneJsonId}_{(nextNoteType == "long" ? "long_" : "")}{newId}";
-
-            await InitializeNote();
+            // Optimized: Get type from cache without parsing
+            if (currentLaneNotes.TryGetValue(newId, out adata.NoteInfo nextNote))
+            {
+                string nextNoteType = nextNote.type;
+                name = $"{laneJsonId}_{(nextNoteType == "long" ? "long_" : "")}{newId}";
+                await InitializeNote();
+            }
+            else
+            {
+                Debug.LogError($"Next note {newId} not found in cache.");
+                Destroy(gameObject);
+            }
         }
     }
 
@@ -152,34 +197,45 @@ public class LaneController : MonoBehaviour
         game_time = 0.0f;
         id = GetIdFromName(0);
         
-        cd = JObject.Parse(jsonObj["chartdata"][laneJsonId][id.ToString()].ToString());
-        arrsec = (float)cd["time"];
-        offset = (float)jsonObj["maindata"]["offset"];
-        type = cd["type"].ToString();
-        speed = (float)cd["speed"] * (adata.speed * 10.0f);
-        
-        long_click = false;
+        if (currentLaneNotes.TryGetValue(id, out adata.NoteInfo note))
+        {
+            currentNoteInfo = note;
+            cd = note.rawData;
+            
+            arrsec = note.time;
+            offset = (float)jsonObj["maindata"]["offset"];
+            type = note.type;
+            speed = note.speed * (adata.speed * 10.0f);
+            
+            long_click = false;
 
-        s_change = cd.ContainsKey("s_change") && (bool)cd["s_change"];
-        if (s_change)
-        {
-            change = (JArray)cd["changes"];
-            change_count = 0;
-        }
+            s_change = note.s_change;
+            if (s_change)
+            {
+                change = note.changes;
+                change_count = 0;
+            }
 
-        if (type == "long")
-        {
-            endsec = (float)cd["endtime"];
-            length = (speed / 2) * (endsec - arrsec) / 2;
-            GetComponent<Renderer>().material.color = new Color32(90, 255, 96, 255);
-            this.transform.localScale = new Vector3(0.7f, 0.01f, length);
-            isLongNoteActive = true;
+            if (type == "long")
+            {
+                endsec = note.endtime;
+                length = (speed / 2) * (endsec - arrsec) / 2;
+                GetComponent<Renderer>().material.color = new Color32(90, 255, 96, 255);
+                this.transform.localScale = new Vector3(0.7f, 0.01f, length);
+                isLongNoteActive = true;
+            }
+            else // tap
+            {
+                isLongNoteActive = false;
+                GetComponent<Renderer>().material.color = new Color32(0, 255, 232, 255);
+                transform.localScale = new Vector3(0.7f, 0.01f, 0.1f);
+            }
         }
-        else // tap
+        else
         {
-            isLongNoteActive = false;
-            GetComponent<Renderer>().material.color = new Color32(0, 255, 232, 255);
-            transform.localScale = new Vector3(0.7f, 0.01f, 0.1f);
+            Debug.LogError($"Note {id} not found in cache for lane {laneIndex}");
+            Destroy(gameObject);
+            return Task.CompletedTask;
         }
         
         transform.position = new Vector3(transform.position.x, transform.position.y, -40000);
@@ -275,7 +331,7 @@ public class LaneController : MonoBehaviour
                 return;
             }
             
-            // --- Speed & Position Update ---
+            // ここからスピード・位置更新
             game_time = adata.game_time;
             float originalSpeed = (float)cd["speed"] * (adata.speed * 10.0f);
             speed = originalSpeed;
@@ -296,8 +352,9 @@ public class LaneController : MonoBehaviour
                 isLongNoteActive ? 0.0001f : 0.0004f,
                 whereiam() + (isLongNoteActive ? (length / 2.0f) : 0)
             );
+            // ここまでスピード・位置更新
             
-            // --- Previous Note Check ---
+            // ここから前のノーツ確認
             if (!isPreviousObjectDestroyed)
             {
                  if (id > 0)
@@ -323,11 +380,12 @@ public class LaneController : MonoBehaviour
             }
 
             if (!isPreviousObjectDestroyed) return;
+            // ここまで前のノーツ確認
 
-            // --- Judgement Logic ---
+            // ここから判定ロジック
             float timelag = Mathf.Abs(game_time - arrsec);
 
-            // --- AUTO PLAY ---
+            // ここからオートプレイ
             if (adata.auto_play)
             {
                 if (type == "tap" && (arrsec - game_time <= adata.auto))
@@ -351,20 +409,28 @@ public class LaneController : MonoBehaviour
                 }
                 return;
             }
+            // ここまでオートプレイ
 
-            // --- MANUAL PLAY ---
+            // ここから手動プレイ
             bool keyPress = Input.GetKeyDown(inputKey) || Input.GetKeyDown(controllerKey);
             bool keyHeld = Input.GetKey(inputKey) || Input.GetKey(controllerKey);
             bool mousePress = Input.GetMouseButtonDown(0) && IsMouseOverLane();
             bool mouseHeld = Input.GetMouseButton(0) && IsMouseOverLane();
 
+            // Anti-Ghosting: If input was already used this frame for this lane, ignore it for this note.
+            if ((keyPress || mousePress) && LastJudgedFrame == Time.frameCount)
+            {
+                keyPress = false;
+                mousePress = false;
+            }
+
             if (type == "tap")
             {
                 if (keyPress || mousePress)
                 {
-                    if (timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect"); }
-                    else if (timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good"); }
-                    else if (timelag <= adata.bad) { ShowJudgementEffect("Bad"); UpdateScore("Bad"); }
+                    if (timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect"); LastJudgedFrame = Time.frameCount; }
+                    else if (timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good"); LastJudgedFrame = Time.frameCount; }
+                    else if (timelag <= adata.bad) { ShowJudgementEffect("Bad"); UpdateScore("Bad"); LastJudgedFrame = Time.frameCount; }
                     else { return; } // Input too early/late, ignore
                     await RecycleOrDestroy();
                 }
@@ -380,11 +446,12 @@ public class LaneController : MonoBehaviour
                 {
                     if (keyPress || mousePress)
                     {
-                        if (timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect"); long_click = true; }
-                        else if (timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good"); long_click = true; }
+                        if (timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect"); long_click = true; LastJudgedFrame = Time.frameCount; }
+                        else if (timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good"); long_click = true; LastJudgedFrame = Time.frameCount; }
                         else if (timelag <= adata.bad) {
                             ShowJudgementEffect("Bad"); UpdateScore("Bad", 2);
                             LongNoteDetermined = true;
+                            LastJudgedFrame = Time.frameCount;
                         }
                     }
                     else if (game_time > arrsec + adata.miss)
@@ -417,6 +484,8 @@ public class LaneController : MonoBehaviour
                     await RecycleOrDestroy();
                 }
             }
+            // ここまで手動プレイ
+            // ここまで判定ロジック
         }
         catch (Exception e)
         {

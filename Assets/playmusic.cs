@@ -171,7 +171,8 @@ public class PlayMusic : MonoBehaviour
                     Debug.Log("Playing...");
                     if (adata.isOfflineMode)
                     {
-                        string path = Path.Combine(adata.musicPath, bgm + ".wav");
+                        string safeFileName = adata.GetSafeFileName(bgm);
+                        string path = Path.Combine(adata.musicPath, safeFileName + ".wav");
                         if (!File.Exists(path))
                         {
                             Debug.LogError("Audio file not found: " + path);
