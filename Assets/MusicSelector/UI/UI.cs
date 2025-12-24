@@ -12,6 +12,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 public class UI : MonoBehaviour
 {
@@ -25,10 +26,10 @@ public class UI : MonoBehaviour
     private List<string> Musics = new List<string>();
     private List<List<bool>> LevelExists = new List<List<bool>>();
     public TextMeshProUGUI level_text;
-    public Button upButton;
-    public Button downButton;
-    public Button rightButton;
-    public Button leftButton;
+    public UnityEngine.UI.Button upButton;
+    public UnityEngine.UI.Button downButton;
+    public UnityEngine.UI.Button rightButton;
+    public UnityEngine.UI.Button leftButton;
     private float last_tap;
     public GameObject MusicName;
     public GameObject Composer;
@@ -37,10 +38,10 @@ public class UI : MonoBehaviour
 
     public GameObject LevelSelector;
     public Animator Anim;
-    public Button ABtn;
-    public Button MBtn;
-    public Button HBtn;
-    public Button EBtn;
+    public UnityEngine.UI.Button ABtn;
+    public UnityEngine.UI.Button MBtn;
+    public UnityEngine.UI.Button HBtn;
+    public UnityEngine.UI.Button EBtn;
 
     public GameObject EasyText;
     public GameObject HardText;
@@ -73,9 +74,11 @@ public class UI : MonoBehaviour
     private string[] OrderModes = { "asc", "desc" };
     private string[] Genres = { "all", "ゲーム", "VOCALOID", "POPS%26ANIME" };
 
-    public Toggle KeepDownloads;
-    public Toggle OfflineMode;
-    public Button reDownload;
+    public UnityEngine.UI.Toggle KeepDownloads;
+    public UnityEngine.UI.Toggle OfflineMode;
+    public UnityEngine.UI.Button reDownload;
+    public GameObject downloadLog;
+    public TMP_FontAsset logFont; // ログ用のフォントアセット
 
     private string settingsFilePath;
     private static bool checksumManagerInitialized = false;
@@ -449,7 +452,7 @@ public class UI : MonoBehaviour
     // ★★★ 修正箇所 ★★★
     private IEnumerator LoadOrDownloadAudio(string musicName, Action<AudioClip> onLoaded)
     {
-        string safeFileName = string.Join("_", musicName.Split(Path.GetInvalidFileNameChars()));
+        string safeFileName = adata.GetSafeFileName(musicName);
         string localAudioPath = Path.Combine(previewAudioCachePath, safeFileName + ".wav");
 
         // オフラインモードの場合、ローカルキャッシュのみ確認
@@ -527,6 +530,61 @@ public class UI : MonoBehaviour
         }
     }
 
+    // ログ表示用のヘルパーメソッド
+    private TextMeshProUGUI AddDownloadLog(string message, Transform contentTransform)
+    {
+        // LayoutGroupがない場合に追加（初回のみ）
+        VerticalLayoutGroup layoutGroup = contentTransform.GetComponent<VerticalLayoutGroup>();
+        if (layoutGroup == null)
+        {
+            layoutGroup = contentTransform.gameObject.AddComponent<VerticalLayoutGroup>();
+            layoutGroup.childControlHeight = true;
+            layoutGroup.childControlWidth = true;
+            layoutGroup.childForceExpandHeight = false;
+            layoutGroup.childForceExpandWidth = true;
+            layoutGroup.spacing = 5;
+        }
+
+        ContentSizeFitter fitter = contentTransform.GetComponent<ContentSizeFitter>();
+        if (fitter == null)
+        {
+            fitter = contentTransform.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
+        // 新しいGameObjectを作成
+        GameObject logObj = new GameObject("LogLine");
+        logObj.transform.SetParent(contentTransform, false);
+
+        // TextMeshProUGUIコンポーネントを追加
+        TextMeshProUGUI textComp = logObj.AddComponent<TextMeshProUGUI>();
+        if (logFont != null)
+        {
+            textComp.font = logFont;
+        }
+        textComp.text = message;
+        textComp.fontSize = 24;
+        textComp.color = Color.white;
+        textComp.alignment = TextAlignmentOptions.Left;
+        textComp.enableWordWrapping = false; // 折り返しなし
+
+        // 自動スクロール（フレーム待機）
+        StartCoroutine(AutoScrollToBottom());
+
+        return textComp;
+    }
+
+    private IEnumerator AutoScrollToBottom()
+    {
+        yield return new WaitForEndOfFrame();
+        Canvas.ForceUpdateCanvases();
+        var scrollRect = downloadLog.GetComponent<ScrollRect>();
+        if (scrollRect != null)
+        {
+            scrollRect.verticalNormalizedPosition = 0f;
+        }
+    }
+
     /// <summary>
     /// オフラインモード用に全ての楽曲データをダウンロードします。
     /// プレビュー音源と本体音源のダウンロードは全曲一括並列で行います。
@@ -542,6 +600,16 @@ public class UI : MonoBehaviour
             //FadeOut(adata.previewFadeDuration);
         }
         if (SetupLoading != null) SetupLoading.SetActive(true);
+        
+        downloadLog.GetComponent<CanvasGroup>().alpha = 1.0f;
+        // ScrollViewのContentを取得 (階層構造を想定: ScrollView -> Viewport -> Content)
+        Transform contentTransform = downloadLog.GetComponent<ScrollRect>()?.content;
+        if (contentTransform == null)
+        {
+            // ScrollRectがない場合、downloadLog直下をContentとみなす（フォールバック）
+            contentTransform = downloadLog.transform; 
+        }
+
         if (SetupText != null)
         {
             SetupText.GetComponent<TextMeshProUGUI>().text = "オフラインデータの準備中...";
@@ -600,7 +668,7 @@ public class UI : MonoBehaviour
         {
             string musicName = Musics[i];
             string encodedMusicName = Uri.EscapeDataString(musicName);
-            string safeFileName = string.Join("_", musicName.Split(Path.GetInvalidFileNameChars()));
+            string safeFileName = adata.GetSafeFileName(musicName);
             for (int j = 0; j < diffs.Length; j++)
             {
                 if (LevelExists[i][j])
@@ -608,9 +676,9 @@ public class UI : MonoBehaviour
                     string diff = diffs[j];
                     string chartUrl = $"{baseUrl}/getChart/?chart={encodedMusicName}&diff={diff}";
                     string savePath = Path.Combine(Path.Combine(chartsPath, diff), safeFileName + ".json");
-                    if (SetupText != null)
-                        SetupText.GetComponent<TextMeshProUGUI>().text = $"譜面ダウンロード中... ({i + 1}/{Musics.Count})\n{musicName} [{diff}]";
-                    yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(chartUrl, savePath, SetupText));
+                    
+                    TextMeshProUGUI logLine = AddDownloadLog($"譜面DL開始: {musicName} [{diff}]", contentTransform);
+                    yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(chartUrl, savePath, logLine));
                 }
             }
         }
@@ -620,56 +688,73 @@ public class UI : MonoBehaviour
         {
             string musicName = Musics[i];
             string encodedMusicName = Uri.EscapeDataString(musicName);
-            string safeFileName = string.Join("_", musicName.Split(Path.GetInvalidFileNameChars()));
+            string safeFileName = adata.GetSafeFileName(musicName);
             string jacketUrl = $"{baseUrl}/getJacket/?chart={encodedMusicName}";
             string jacketSavePath = Path.Combine(jacketsPath, safeFileName + ".jpg");
-            if (SetupText != null)
-                SetupText.GetComponent<TextMeshProUGUI>().text = $"ジャケットダウンロード中... ({i + 1}/{Musics.Count})\n{musicName}";
-            yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(jacketUrl, jacketSavePath, SetupText));
+            
+            TextMeshProUGUI logLine = AddDownloadLog($"ジャケットDL開始: {musicName}", contentTransform);
+            yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(jacketUrl, jacketSavePath, logLine));
         }
 
-        // 3&4. プレビュー音源と本体音源を全曲一括並列ダウンロード
+        // 3&4. プレビュー音源と本体音源を全曲一括並列ダウンロード（同時実行数を制限）
         int total = Musics.Count;
         int completed = 0;
         bool[] previewDone = new bool[total];
         bool[] audioDone = new bool[total];
-        List<Coroutine> running = new List<Coroutine>();
+        
+        // 同時ダウンロード数の制限（これ大事！回線パンク防止）
+        int maxConcurrentDownloads = 3;
+        int currentDownloads = 0;
 
         // プレビュー音源ダウンロード用コルーチン
         IEnumerator DownloadPreview(int idx)
         {
+            // 枠が空くまで待機
+            while (currentDownloads >= maxConcurrentDownloads) yield return null;
+            currentDownloads++;
+
             string musicName = Musics[idx];
             string encodedMusicName = Uri.EscapeDataString(musicName);
-            string safeFileName = string.Join("_", musicName.Split(Path.GetInvalidFileNameChars()));
+            string safeFileName = adata.GetSafeFileName(musicName);
             string previewUrl = $"{baseUrl}/getPreviewAudio/?chart={encodedMusicName}";
             string previewSavePath = Path.Combine(previewsPath, safeFileName + ".wav");
-            if (SetupText != null)
-                SetupText.GetComponent<TextMeshProUGUI>().text = $"プレビュー音源ダウンロード中... ({idx + 1}/{total})\n{musicName}";
-            yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(previewUrl, previewSavePath, SetupText));
+            
+            TextMeshProUGUI logLine = AddDownloadLog($"プレビューDL開始: {musicName}", contentTransform);
+            yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(previewUrl, previewSavePath, logLine));
+            
             previewDone[idx] = true;
             completed++;
+            currentDownloads--;
         }
 
         // 本体音源ダウンロード用コルーチン
         IEnumerator DownloadAudio(int idx)
         {
+            // 枠が空くまで待機
+            while (currentDownloads >= maxConcurrentDownloads) yield return null;
+            currentDownloads++;
+
             string musicName = Musics[idx];
             string encodedMusicName = Uri.EscapeDataString(musicName);
-            string safeFileName = string.Join("_", musicName.Split(Path.GetInvalidFileNameChars()));
+            string safeFileName = adata.GetSafeFileName(musicName);
             string audioUrl = $"{baseUrl}/getAudio/?chart={encodedMusicName}";
             string audioSavePath = Path.Combine(musicPath, safeFileName + ".wav");
-            if (SetupText != null)
-                SetupText.GetComponent<TextMeshProUGUI>().text = $"音源ダウンロード中... ({idx + 1}/{total})\n{musicName}";
-            yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(audioUrl, audioSavePath, SetupText));
+            
+            TextMeshProUGUI logLine = AddDownloadLog($"音源DL開始: {musicName}", contentTransform);
+            yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(audioUrl, audioSavePath, logLine));
+            
             audioDone[idx] = true;
             completed++;
+            currentDownloads--;
         }
 
-        // 全曲一括でコルーチン起動
+        // 全曲のダウンロードタスクを登録（実行はコルーチン内で制御）
         for (int i = 0; i < total; i++)
         {
-            running.Add(StartCoroutine(DownloadPreview(i)));
-            running.Add(StartCoroutine(DownloadAudio(i)));
+            StartCoroutine(DownloadPreview(i));
+            StartCoroutine(DownloadAudio(i));
+            // 少しウェイトを入れて、一気にリクエストが飛びすぎないようにする
+            yield return new WaitForSeconds(0.1f);
         }
 
         // 全てのダウンロードが終わるまで待機
@@ -695,6 +780,14 @@ public class UI : MonoBehaviour
             yield return fadeCoroutine;
             //FadeOut(adata.previewFadeDuration);
         }
+        downloadLog.GetComponent<CanvasGroup>().alpha = 0.0f;
+        
+        // ログの内容をすべて削除する
+        foreach (Transform child in contentTransform)
+        {
+            Destroy(child.gameObject);
+        }
+        
         if (SetupLoading != null) SetupLoading.SetActive(false);
     }
 
@@ -933,10 +1026,13 @@ public class UI : MonoBehaviour
     }
 
     // --- 追加: ダウンロード進捗・速度・ETA・%表示付きコルーチン ---
-    private IEnumerator DownloadAndSaveFileCoroutineWithSpeed(string url, string savePath, GameObject setupTextObj)
+    private IEnumerator DownloadAndSaveFileCoroutineWithSpeed(string url, string savePath, TextMeshProUGUI logText)
     {
         if (File.Exists(savePath))
+        {
+            if (logText != null) logText.text += " (スキップ: 既存)";
             yield break;
+        }
 
         // 楽曲名をURLから抽出（API仕様に依存）
         string songName = null;
@@ -970,6 +1066,10 @@ public class UI : MonoBehaviour
         int maxRetry = 10;
         int retryCount = 0;
         bool success = false;
+        
+        // ログの初期メッセージを保存
+        string baseMsg = logText != null ? logText.text : "";
+
         while (retryCount < maxRetry && !success)
         {
             using (UnityWebRequest www = UnityWebRequest.Get(url))
@@ -1012,17 +1112,11 @@ public class UI : MonoBehaviour
                             percent = progress * 100f;
                         }
 
-                        if (setupTextObj != null)
+                        if (logText != null)
                         {
-                            var text = setupTextObj.GetComponent<TextMeshProUGUI>();
-                            if (text != null)
+                            if (!url.Contains("/getChart"))
                             {
-                                string[] lines = text.text.Split('\n');
-                                string baseMsg = lines.Length > 1 ? lines[0] + "\n" + lines[1] : text.text;
-                                if (!url.Contains("/getChart"))
-                                {
-                                    text.text = $"{baseMsg}\n{percent:F1}% 速度: {FormatBytes(speed)}/s  ETA: {eta:F1}秒";
-                                }
+                                logText.text = $"{baseMsg}  {percent:F1}%  {FormatBytes(speed)}/s  残り{eta:F1}秒";
                             }
                         }
                     }
@@ -1031,37 +1125,35 @@ public class UI : MonoBehaviour
 
                 if (www.result == UnityWebRequest.Result.Success)
                 {
+                    bool saveSuccess = false;
                     try
                     {
                         File.WriteAllBytes(savePath, www.downloadHandler.data);
                         Debug.Log($"Successfully downloaded and saved to {savePath}");
+                        saveSuccess = true;
                         success = true;
+                        if (logText != null) logText.text = $"{baseMsg}  のダウンロードが完了しました";
                     }
                     catch (Exception e)
                     {
                         Debug.LogError($"Failed to save file to {savePath}: {e.Message}");
+                        if (logText != null)
+                            logText.text = $"{baseMsg}  保存に失敗しました。リトライします({retryCount + 1}/{maxRetry})";
+                    }
+
+                    if (!saveSuccess)
+                    {
                         retryCount++;
-                        if (setupTextObj != null)
-                        {
-                            var text = setupTextObj.GetComponent<TextMeshProUGUI>();
-                            if (text != null)
-                                text.text += $"\n保存失敗 リトライ中... ({retryCount}/{maxRetry})";
-                        }
-                        // フラグを設定して待機処理を行う
-                        //return new WaitForSeconds(1f);
-                        new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(1f);
                     }
                 }
                 else
                 {
                     Debug.LogError($"Failed to download from {url}: {www.error} (retry {retryCount + 1}/{maxRetry})");
                     retryCount++;
-                    if (setupTextObj != null)
-                    {
-                        var text = setupTextObj.GetComponent<TextMeshProUGUI>();
-                        if (text != null)
-                            text.text += $"\nダウンロード失敗 リトライ中... ({retryCount}/{maxRetry})";
-                    }
+                    if (logText != null)
+                        logText.text = $"{baseMsg}  ダウンロードに失敗しました。リトライします({retryCount}/{maxRetry})";
+
                     yield return new WaitForSeconds(1f);
                 }
             }
@@ -1069,12 +1161,8 @@ public class UI : MonoBehaviour
         if (!success)
         {
             Debug.LogError($"Failed to download from {url} after {maxRetry} retries.");
-            if (setupTextObj != null)
-            {
-                var text = setupTextObj.GetComponent<TextMeshProUGUI>();
-                if (text != null)
-                    text.text += $"\nダウンロード失敗: {url}";
-            }
+            if (logText != null)
+                logText.text = $"{baseMsg}  失敗";
         }
     }
 
