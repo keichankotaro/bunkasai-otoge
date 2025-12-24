@@ -162,6 +162,7 @@ public class adata : MonoBehaviour
 
     public static void LoadChartData(JObject json)
     {
+        // Clear previous data
         L1Notes.Clear();
         L2Notes.Clear();
         L3Notes.Clear();
@@ -169,6 +170,7 @@ public class adata : MonoBehaviour
 
         if (json["chartdata"] == null) return;
 
+        // Helper to parse a lane
         void ParseLane(string laneKey, Dictionary<int, NoteInfo> targetDict)
         {
             if (json["chartdata"][laneKey] == null) return;
@@ -178,6 +180,7 @@ public class adata : MonoBehaviour
             {
                 if (child is JProperty prop)
                 {
+                    // Skip metadata keys like "L1data" or "notes" if they are mixed in
                     if (int.TryParse(prop.Name, out int id))
                     {
                         JToken noteJson = prop.Value;
@@ -207,6 +210,12 @@ public class adata : MonoBehaviour
         
         Debug.Log($"[adata] Cached Chart Data. L1:{L1Notes.Count}, L2:{L2Notes.Count}, L3:{L3Notes.Count}, L4:{L4Notes.Count}");
     }
+
+    public static string GetSafeFileName(string name)
+    {
+        return string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
+    }
+
     public class NoteInfo
     {
         public int aid;
@@ -217,6 +226,7 @@ public class adata : MonoBehaviour
         public bool s_change;
         public JArray changes;
 
+        // Raw JObject for fallback/debugging or sending to debugger
         public JObject rawData;
     }
 }

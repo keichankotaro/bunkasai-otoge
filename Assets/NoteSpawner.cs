@@ -59,7 +59,7 @@ public class NoteSpawner : MonoBehaviour
         // --- キャッシュデータの取得 ---
         Dictionary<int, adata.NoteInfo> noteCache = null;
 
-        switch (laneIndex)
+        switch (laneIndex)  
         {
             case 1: noteCache = adata.L1Notes; break;
             case 2: noteCache = adata.L2Notes; break;
