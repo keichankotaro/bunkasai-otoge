@@ -13,7 +13,7 @@ public class ResultUI : MonoBehaviour
     [SerializeField] public GameObject PerfectText;
     [SerializeField] public GameObject GreatText;
     [SerializeField] public GameObject GoodText;
-    [SerializeField] public GameObject BadText;
+    //[SerializeField] public GameObject BadText;
     [SerializeField] public GameObject MissText;
     [SerializeField] public GameObject RankText;
     [SerializeField] public GameObject MusicText;
@@ -36,8 +36,8 @@ public class ResultUI : MonoBehaviour
     public TextMeshProUGUI GreatLateText;
     public TextMeshProUGUI GoodFastText;
     public TextMeshProUGUI GoodLateText;
-    public TextMeshProUGUI BadFastText;
-    public TextMeshProUGUI BadLateText;
+    //public TextMeshProUGUI BadFastText;
+    //public TextMeshProUGUI BadLateText;
 
     // Fast/Late Counters
     public static int PerfectPlusFast, PerfectPlusLate;
@@ -124,13 +124,13 @@ public class ResultUI : MonoBehaviour
             if (GreatLateText != null) GreatLateText.text = "Late: " + GreatLate.ToString();
             if (GoodFastText != null) GoodFastText.text = "Fast: " + GoodFast.ToString();
             if (GoodLateText != null) GoodLateText.text = "Late: " + GoodLate.ToString();
-            if (BadFastText != null) BadFastText.text = "Fast: " + BadFast.ToString();
-            if (BadLateText != null) BadLateText.text = "Late: " + BadLate.ToString();
+            //if (BadFastText != null) BadFastText.text = "Fast: " + BadFast.ToString();
+            //if (BadLateText != null) BadLateText.text = "Late: " + BadLate.ToString();
             //PerfectPlusText.GetComponent<TextMeshProUGUI>().text = "Perfect+: " + PerfectPlus;
             PerfectText.GetComponent<TextMeshProUGUI>().text = "Perfect: " + (perfect + PerfectPlus);
             GreatText.GetComponent<TextMeshProUGUI>().text = "Great: " + Great;
             GoodText.GetComponent<TextMeshProUGUI>().text = "Good: " + good;
-            BadText.GetComponent<TextMeshProUGUI>().text = "Bad: " + bad;
+            //BadText.GetComponent<TextMeshProUGUI>().text = "Bad: " + bad;
             MissText.GetComponent<TextMeshProUGUI>().text = "Miss: " + miss;
             Rank = adata.auto_play ? "Auto" : (score > 990000) ? "SSS+" : (score > 980000) ? "SSS" : (score > 950000) ? "SS" : (score > 900000) ? "S" : (score > 850000) ? "AAA" : (score > 800000) ? "AA" : (score > 750000) ? "A" : (score > 700000) ? "BBB" : (score > 650000) ? "BB" : (score > 600000) ? "B" : (score > 550000) ? "C" : "D";
             RankText.GetComponent<TextMeshProUGUI>().text = Rank;
