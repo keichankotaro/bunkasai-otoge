@@ -63,7 +63,7 @@ public class ScoreManeger : MonoBehaviour
             notes += cnt;
             l4_notes += cnt;
         }
-        maxscore = notes * 21;
+        maxscore = notes * adata.perfect_plus_score;
         Debug.Log("MaxCombo: " + notes);
 
         if (DebugText.isDebugMode)

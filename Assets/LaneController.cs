@@ -262,28 +262,28 @@ public class LaneController : MonoBehaviour
         switch(judge)
         {
             case "PerfectPlus": 
-                ScoreManeger.score += 21; 
-                ResultUI.PerfectPlus++; 
+                ScoreManeger.score += adata.perfect_plus_score;
+                ResultUI.PerfectPlus++;
                 if (!isAuto) { if (isLate) ResultUI.PerfectPlusLate++; else ResultUI.PerfectPlusFast++; }
                 break;
             case "Perfect": 
-                ScoreManeger.score += 20; 
-                ResultUI.Perfect++; 
+                ScoreManeger.score += adata.perfect_score;
+                ResultUI.Perfect++;
                 if (!isAuto) { if (isLate) ResultUI.PerfectLate++; else ResultUI.PerfectFast++; }
                 break;
-            case "Great": 
-                ScoreManeger.score += 16; 
-                ResultUI.Great++; 
+            case "Great":
+                ScoreManeger.score += adata.great_score;
+                ResultUI.Great++;
                 if (!isAuto) { if (isLate) ResultUI.GreatLate++; else ResultUI.GreatFast++; }
                 break;
-            case "Good": 
-                ScoreManeger.score += 8; 
-                ResultUI.Good++; 
+            case "Good":
+                ScoreManeger.score += adata.good_score;
+                ResultUI.Good++;
                 if (!isAuto) { if (isLate) ResultUI.GoodLate++; else ResultUI.GoodFast++; }
                 break;
-            case "Bad": 
-                ScoreManeger.score += 0; 
-                ResultUI.Bad++; 
+            case "Bad":
+                ScoreManeger.score += adata.bad_score;
+                ResultUI.Bad++;
                 if (!isAuto) { if (isLate) ResultUI.BadLate++; else ResultUI.BadFast++; }
                 break;
             case "Miss": ResultUI.Miss += amount; break;
@@ -297,7 +297,7 @@ public class LaneController : MonoBehaviour
             case 3: updateDebug = (j, s) => { DebugText.judged_l3 += j; DebugText.score_l3 += s; }; break;
             case 4: updateDebug = (j, s) => { DebugText.judged_l4 += j; DebugText.score_l4 += s; }; break;
         }
-        updateDebug(amount, judge == "PerfectPlus" ? 21 : (judge == "Perfect" ? 20 : (judge == "Great" ? 16 : (judge == "Good" ? 8 : (judge == "Bad" ? 0 : 0)))));
+        updateDebug(amount, judge == "PerfectPlus" ? adata.perfect_plus_score : (judge == "Perfect" ? adata.perfect_score : (judge == "Great" ? adata.great_score : (judge == "Good" ? adata.good_score : (judge == "Bad" ? adata.bad_score : adata.miss_score)))));
 
         Action<int> updateJudgeCount = (j) => {};
         switch(laneIndex)
