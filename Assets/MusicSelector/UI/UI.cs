@@ -677,7 +677,7 @@ public class UI : MonoBehaviour
                     string chartUrl = $"{baseUrl}/getChart/?chart={encodedMusicName}&diff={diff}";
                     string savePath = Path.Combine(Path.Combine(chartsPath, diff), safeFileName + ".json");
                     
-                    TextMeshProUGUI logLine = AddDownloadLog($"譜面DL開始: {musicName} [{diff}]", contentTransform);
+                    TextMeshProUGUI logLine = AddDownloadLog($"譜面データ: {musicName} [{diff}]", contentTransform);
                     yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(chartUrl, savePath, logLine));
                 }
             }
@@ -692,7 +692,7 @@ public class UI : MonoBehaviour
             string jacketUrl = $"{baseUrl}/getJacket/?chart={encodedMusicName}";
             string jacketSavePath = Path.Combine(jacketsPath, safeFileName + ".jpg");
             
-            TextMeshProUGUI logLine = AddDownloadLog($"ジャケットDL開始: {musicName}", contentTransform);
+            TextMeshProUGUI logLine = AddDownloadLog($"ジャケット画像: {musicName}", contentTransform);
             yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(jacketUrl, jacketSavePath, logLine));
         }
 
@@ -719,7 +719,7 @@ public class UI : MonoBehaviour
             string previewUrl = $"{baseUrl}/getPreviewAudio/?chart={encodedMusicName}";
             string previewSavePath = Path.Combine(previewsPath, safeFileName + ".wav");
             
-            TextMeshProUGUI logLine = AddDownloadLog($"プレビューDL開始: {musicName}", contentTransform);
+            TextMeshProUGUI logLine = AddDownloadLog($"プレビュー音源: {musicName}", contentTransform);
             yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(previewUrl, previewSavePath, logLine));
             
             previewDone[idx] = true;
@@ -740,7 +740,7 @@ public class UI : MonoBehaviour
             string audioUrl = $"{baseUrl}/getAudio/?chart={encodedMusicName}";
             string audioSavePath = Path.Combine(musicPath, safeFileName + ".wav");
             
-            TextMeshProUGUI logLine = AddDownloadLog($"音源DL開始: {musicName}", contentTransform);
+            TextMeshProUGUI logLine = AddDownloadLog($"音源: {musicName}", contentTransform);
             yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(audioUrl, audioSavePath, logLine));
             
             audioDone[idx] = true;
@@ -1132,7 +1132,7 @@ public class UI : MonoBehaviour
                         Debug.Log($"Successfully downloaded and saved to {savePath}");
                         saveSuccess = true;
                         success = true;
-                        if (logText != null) logText.text = $"{baseMsg}  のダウンロードが完了しました";
+                        if (logText != null) logText.text = $"{baseMsg}  ダウンロードが完了しました";
                     }
                     catch (Exception e)
                     {

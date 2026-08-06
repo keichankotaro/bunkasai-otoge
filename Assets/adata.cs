@@ -20,6 +20,7 @@ public class adata : MonoBehaviour
     public static float offset_diameter = 100000f;
     // 判定エフェクトのプレハブ
     public static GameObject p = (GameObject)Resources.Load("Prefab/Perfect");
+    public static GameObject gr = (GameObject)Resources.Load("Prefab/Great");
     public static GameObject g = (GameObject)Resources.Load("Prefab/Good");
     public static GameObject b = (GameObject)Resources.Load("Prefab/Bad");
     public static GameObject m = (GameObject)Resources.Load("Prefab/Miss");
@@ -45,10 +46,12 @@ public class adata : MonoBehaviour
 
     // 判定幅の設定
     public static float auto = 0.001f;
-    public static float perfect = 0.04f;
-    public static float good = 0.08f;
-    public static float bad = 0.15f;
-    public static float miss = 0.22f;
+    public static float perfect_plus = 0.03f;
+    public static float perfect = 0.05f;
+    public static float great = 0.07f;
+    public static float good = 0.1f;
+    public static float bad = 0.15f; // bad廃止の為未使用
+    public static float miss = 0.18f;
     // ロングノーツの終端判定ラグ
     public static float longEndTimeLag = 0.07f;
     // ここまで基本設定

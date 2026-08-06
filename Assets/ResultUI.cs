@@ -9,7 +9,9 @@ public class ResultUI : MonoBehaviour
 {
     [SerializeField] public GameObject Result;
     [SerializeField] public GameObject ScoreText;
+    [SerializeField] public GameObject PerfectPlusText;
     [SerializeField] public GameObject PerfectText;
+    [SerializeField] public GameObject GreatText;
     [SerializeField] public GameObject GoodText;
     [SerializeField] public GameObject BadText;
     [SerializeField] public GameObject MissText;
@@ -18,7 +20,35 @@ public class ResultUI : MonoBehaviour
     [SerializeField] public GameObject LevelText;
     [SerializeField] public GameObject ComposerText;
     [SerializeField] public GameObject Jacket;
+
+    [Header("Counts Detail UI")]
+    public GameObject CountsPanel;
+    public GameObject CountsDetailPanel;
+    public UnityEngine.UI.Button GoCountsDetailButton;
+    public UnityEngine.UI.Button BackButton;
+
+    [Header("Fast/Late Texts")]
+    public TextMeshProUGUI PerfectPlusFastText;
+    public TextMeshProUGUI PerfectPlusLateText;
+    public TextMeshProUGUI PerfectFastText;
+    public TextMeshProUGUI PerfectLateText;
+    public TextMeshProUGUI GreatFastText;
+    public TextMeshProUGUI GreatLateText;
+    public TextMeshProUGUI GoodFastText;
+    public TextMeshProUGUI GoodLateText;
+    public TextMeshProUGUI BadFastText;
+    public TextMeshProUGUI BadLateText;
+
+    // Fast/Late Counters
+    public static int PerfectPlusFast, PerfectPlusLate;
+    public static int PerfectFast, PerfectLate;
+    public static int GreatFast, GreatLate;
+    public static int GoodFast, GoodLate;
+    public static int BadFast, BadLate;
+
+    public static int PerfectPlus;
     public static int Perfect;
+    public static int Great;
     public static int Good;
     public static int Bad;
     public static int Miss;
@@ -41,6 +71,18 @@ public class ResultUI : MonoBehaviour
     private int miss;
     private Sprite jacket;
 
+    private void SetPanelActive(GameObject panel, bool active)
+    {
+        if (panel == null) return;
+        var cg = panel.GetComponent<CanvasGroup>();
+        if (cg != null)
+        {
+            cg.alpha = active ? 1f : 0f;
+            cg.interactable = active;
+            cg.blocksRaycasts = active;
+        }
+    }
+
     void Start()
     {
         // Ensure APIManager instance exists
@@ -48,15 +90,45 @@ public class ResultUI : MonoBehaviour
         {
             gameObject.AddComponent<APIManager>();
         }
+
+        if (GoCountsDetailButton != null && CountsDetailPanel != null && CountsPanel != null)
+        {
+            GoCountsDetailButton.onClick.AddListener(() => { 
+                SetPanelActive(CountsPanel, false);
+                SetPanelActive(CountsDetailPanel, true);
+            });
+        }
+        if (BackButton != null && CountsDetailPanel != null && CountsPanel != null)
+        {
+            BackButton.onClick.AddListener(() => { 
+                SetPanelActive(CountsDetailPanel, false);
+                SetPanelActive(CountsPanel, true);
+            });
+        }
     }
 
     void Update()
     {
         if (show && !showed)
         {
+            SetPanelActive(CountsDetailPanel, false);
+            SetPanelActive(CountsPanel, true);
             // Set result data to UI
             ScoreText.GetComponent<TextMeshProUGUI>().text = score.ToString();
-            PerfectText.GetComponent<TextMeshProUGUI>().text = "Perfect: " + perfect;
+
+            if (PerfectPlusFastText != null) PerfectPlusFastText.text = "Fast: " + PerfectPlusFast.ToString();
+            if (PerfectPlusLateText != null) PerfectPlusLateText.text = "Late: " + PerfectPlusLate.ToString();
+            if (PerfectFastText != null) PerfectFastText.text = "Fast: " + PerfectFast.ToString();
+            if (PerfectLateText != null) PerfectLateText.text = "Late: " + PerfectLate.ToString();
+            if (GreatFastText != null) GreatFastText.text = "Fast: " + GreatFast.ToString();
+            if (GreatLateText != null) GreatLateText.text = "Late: " + GreatLate.ToString();
+            if (GoodFastText != null) GoodFastText.text = "Fast: " + GoodFast.ToString();
+            if (GoodLateText != null) GoodLateText.text = "Late: " + GoodLate.ToString();
+            if (BadFastText != null) BadFastText.text = "Fast: " + BadFast.ToString();
+            if (BadLateText != null) BadLateText.text = "Late: " + BadLate.ToString();
+            //PerfectPlusText.GetComponent<TextMeshProUGUI>().text = "Perfect+: " + PerfectPlus;
+            PerfectText.GetComponent<TextMeshProUGUI>().text = "Perfect: " + (perfect + PerfectPlus);
+            GreatText.GetComponent<TextMeshProUGUI>().text = "Great: " + Great;
             GoodText.GetComponent<TextMeshProUGUI>().text = "Good: " + good;
             BadText.GetComponent<TextMeshProUGUI>().text = "Bad: " + bad;
             MissText.GetComponent<TextMeshProUGUI>().text = "Miss: " + miss;
@@ -122,10 +194,18 @@ public class ResultUI : MonoBehaviour
                 show = false;
                 reseted = true;
                 PlayMusic.started_dl = false;
+                PerfectPlus = 0;
                 Perfect = 0;
+                Great = 0;
                 Good = 0;
                 Bad = 0;
                 Miss = 0;
+
+                PerfectPlusFast = 0; PerfectPlusLate = 0;
+                PerfectFast = 0; PerfectLate = 0;
+                GreatFast = 0; GreatLate = 0;
+                GoodFast = 0; GoodLate = 0;
+                BadFast = 0; BadLate = 0;
             }
         }
     }

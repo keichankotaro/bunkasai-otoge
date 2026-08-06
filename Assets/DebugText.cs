@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using System.Text;
+using UnityEditor;
 
 public class DebugText : MonoBehaviour
 {
@@ -28,10 +29,18 @@ public class DebugText : MonoBehaviour
     public static int judged_l2 = 0; // 判定数
     public static int judged_l3 = 0; // 判定数
     public static int judged_l4 = 0; // 判定数
+    public static int perfect_plus_l1 = 0; // Perfect Plus
+    public static int perfect_plus_l2 = 0; // Perfect Plus
+    public static int perfect_plus_l3 = 0; // Perfect Plus
+    public static int perfect_plus_l4 = 0; // Perfect Plus
     public static int perfect_l1 = 0; // Perfect
     public static int perfect_l2 = 0; // Perfect
     public static int perfect_l3 = 0; // Perfect
     public static int perfect_l4 = 0; // Perfect
+    public static int great_l1 = 0; // Great
+    public static int great_l2 = 0; // Great
+    public static int great_l3 = 0; // Great
+    public static int great_l4 = 0; // Great
     public static int good_l1 = 0; // Good
     public static int good_l2 = 0; // Good
     public static int good_l3 = 0; // Good

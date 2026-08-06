@@ -203,138 +203,112 @@ public class ShowDetails : MonoBehaviour
         }
     }
 
+    private void CompleteLoading()
+    {
+        ABtn.interactable = LevelExists[0];
+        MBtn.interactable = LevelExists[1];
+        HBtn.interactable = LevelExists[2];
+        EBtn.interactable = LevelExists[3];
+
+        UpdateLevelDisplay("Another", ALvl, LevelExists[0]);
+        UpdateLevelDisplay("Master", MLvl, LevelExists[1]);
+        UpdateLevelDisplay("Hard", HLvl, LevelExists[2]);
+        UpdateLevelDisplay("Easy", ELvl, LevelExists[3]);
+
+        getted = true;
+        LoadingText.SetActive(false);
+
+        UpdateComposerDisplay();
+        if (MusicTitle != null) MusicTitle.GetComponent<TextMeshProUGUI>().text = Music;
+    }
+
     // Update is called once per frame
     async void Update()
     {
         if (!getted && LoadingText.activeSelf && !alreadyRequest)
         {
+            alreadyRequest = true;
+
             if (adata.isOfflineMode || adata.keepDownloads)
             {
                 byte[] fileData = null;
-                if (adata.isOfflineMode)
+                try
                 {
-                    try
-                    {
-                        fileData = File.ReadAllBytes(Path.Combine(adata.jacketPath, Music + ".jpg"));
-                    }
-                    catch (Exception e)
-                    {
-                        fileData = File.ReadAllBytes(Path.Combine(adata.jacketPath, Music + ".png"));
-                    }
+                    string safeMusicName = adata.GetSafeFileName(Music);
+                    string jpgPath1 = Path.Combine(adata.jacketPath, safeMusicName + ".jpg");
+                    string pngPath1 = Path.Combine(adata.jacketPath, safeMusicName + ".png");
+                    string jpgPath2 = Path.Combine(jacketCachePath, safeMusicName + ".jpg");
+                    string pngPath2 = Path.Combine(jacketCachePath, safeMusicName + ".png");
+
+                    if (File.Exists(jpgPath1)) fileData = File.ReadAllBytes(jpgPath1);
+                    else if (File.Exists(pngPath1)) fileData = File.ReadAllBytes(pngPath1);
+                    else if (File.Exists(jpgPath2)) fileData = File.ReadAllBytes(jpgPath2);
+                    else if (File.Exists(pngPath2)) fileData = File.ReadAllBytes(pngPath2);
                 }
-                else if (adata.keepDownloads)
+                catch (Exception e)
                 {
-                    try
-                    {
-                        fileData = File.ReadAllBytes(Path.Combine(jacketCachePath, Music + ".jpg"));
-                    }
-                    catch (Exception e)
-                    {
-                        fileData = File.ReadAllBytes(Path.Combine(jacketCachePath, Music + ".png"));
-                    }
+                    Debug.LogWarning($"[SetText] File error: {e.Message}");
                 }
-                if (fileData == null)
+
+                if (fileData != null)
                 {
-                    Debug.LogWarning($"[SetText] Jacket for '{Music}' not found in offline mode or cache keep mode. No jacket will be displayed.");
-                    return;
-                }
-                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                texture.LoadImage(fileData);
-                texture.filterMode = FilterMode.Bilinear;
-                texture.Apply();
-                jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                Jacket.GetComponent<Image>().sprite = jacket;
-
-                ABtn.interactable = LevelExists[0];
-                MBtn.interactable = LevelExists[1];
-                HBtn.interactable = LevelExists[2];
-                EBtn.interactable = LevelExists[3];
-
-                UpdateLevelDisplay("Another", ALvl, LevelExists[0]);
-                UpdateLevelDisplay("Master", MLvl, LevelExists[1]);
-                UpdateLevelDisplay("Hard", HLvl, LevelExists[2]);
-                UpdateLevelDisplay("Easy", ELvl, LevelExists[3]);
-
-                getted = true;
-                LoadingText.SetActive(false);
-
-                UpdateComposerDisplay();
-                MusicTitle.GetComponent<TextMeshProUGUI>().text = Music;
-            }
-            else
-            {
-                //alreadyRequest = true;
-                if (adata.isOfflineMode || adata.keepDownloads)
-                {
-                    Debug.LogWarning("[SetText] Offline mode or cache keep mode is enabled. Skipping jacket download.");
-                    if (File.Exists(Path.Combine(jacketCachePath, Music + ".jpg")))
+                    Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                    if (texture.LoadImage(fileData))
                     {
-                        byte[] fileData = File.ReadAllBytes(Path.Combine(jacketCachePath, Music + ".jpg"));
-                        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                        texture.LoadImage(fileData);
-                        if (Jacket == null) return;
                         texture.filterMode = FilterMode.Bilinear;
                         texture.Apply();
-                        Sprite jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                        Jacket.GetComponent<Image>().sprite = jacket;
-                    }
-                    else if (File.Exists(Path.Combine(jacketCachePath, Music + ".png")))
-                    {
-                        byte[] fileData = File.ReadAllBytes(Path.Combine(jacketCachePath, Music + ".png"));
-                        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                        texture.LoadImage(fileData);
-                        if (Jacket == null) return;
-                        texture.filterMode = FilterMode.Bilinear;
-                        texture.Apply();
-                        Sprite jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                        Jacket.GetComponent<Image>().sprite = jacket;
+                        jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                        if (Jacket != null) Jacket.GetComponent<Image>().sprite = jacket;
                     }
                     else
                     {
-                        Debug.LogWarning($"[SetText] Jacket for '{Music}' not found in cache. No jacket will be displayed.");
+                        Debug.LogWarning($"[SetText] Failed to parse jacket image for '{Music}'. File might be corrupted, HTML, or unsupported format (e.g., WebP).");
                     }
                 }
                 else
                 {
-                    var jacketClient = new RestClient($"https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getJacket/index.cgi?chart={Uri.EscapeDataString(Music)}");
-                    RestRequest jacketRequest = new RestRequest
-                    {
-                        Method = Method.Get
-                    };
+                    Debug.LogWarning($"[SetText] Jacket for '{Music}' not found locally.");
+                }
 
+                CompleteLoading();
+            }
+            else
+            {
+                var jacketClient = new RestClient($"https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getJacket/index.cgi?chart={Uri.EscapeDataString(Music)}");
+                RestRequest jacketRequest = new RestRequest { Method = Method.Get };
+
+                try 
+                {
                     var jacketResponse = await jacketClient.ExecuteAsync(jacketRequest);
-
                     if (jacketResponse.RawBytes != null && jacketResponse.RawBytes.Length > 0)
                     {
+                        string savePath = Path.Combine(jacketCachePath, adata.GetSafeFileName(Music) + ".jpg");
+                        File.WriteAllBytes(savePath, jacketResponse.RawBytes);
+
                         Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                        texture.LoadImage(jacketResponse.RawBytes);
-                        texture.filterMode = FilterMode.Bilinear;
-                        texture.Apply();
-                        jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                        Jacket.GetComponent<Image>().sprite = jacket;
-                        Debug.Log("Update");
-
-                        ABtn.interactable = LevelExists[0];
-                        MBtn.interactable = LevelExists[1];
-                        HBtn.interactable = LevelExists[2];
-                        EBtn.interactable = LevelExists[3];
-
-                        UpdateLevelDisplay("Another", ALvl, LevelExists[0]);
-                        UpdateLevelDisplay("Master", MLvl, LevelExists[1]);
-                        UpdateLevelDisplay("Hard", HLvl, LevelExists[2]);
-                        UpdateLevelDisplay("Easy", ELvl, LevelExists[3]);
-
-                        getted = true;
-                        LoadingText.SetActive(false);
-
-                        UpdateComposerDisplay();
-                        MusicTitle.GetComponent<TextMeshProUGUI>().text = Music;
+                        if (texture.LoadImage(jacketResponse.RawBytes))
+                        {
+                            texture.filterMode = FilterMode.Bilinear;
+                            texture.Apply();
+                            jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                            if (Jacket != null) Jacket.GetComponent<Image>().sprite = jacket;
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"[SetText] Failed to parse jacket image for '{Music}' from API. File might be corrupted, HTML, or unsupported format (e.g., WebP).");
+                        }
                     }
                     else
                     {
-                        // Failed to download jacket image
+                        Debug.LogWarning($"[SetText] Jacket for '{Music}' returned empty from API.");
                     }
                 }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[SetText] API Error: {e.Message}");
+                }
+
+                CompleteLoading();
             }
         }
 
