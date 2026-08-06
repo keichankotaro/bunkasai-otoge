@@ -125,7 +125,8 @@ public class LaneController : MonoBehaviour
 
     float whereiam()
     {
-        time_reming = (game_time - arrsec) * -1.0f;
+        float effectiveArrsec = (type == "long" && long_click) ? Mathf.Min(game_time, endsec) : arrsec;
+        time_reming = (game_time - effectiveArrsec) * -1.0f;
         now = (time_reming * (speed / 2)) - 9.51f;
         return now;
     }
@@ -247,19 +248,44 @@ public class LaneController : MonoBehaviour
         return Task.CompletedTask;
     }
     
-    private void UpdateScore(string judge, int amount = 1)
+    private void UpdateScore(string judge, int amount = 1, bool isLate = false, bool isAuto = false)
     {
         if (judge == "Bad" || judge == "Miss") {
             ScoreManeger.combo = 0;
         } else {
-            ScoreManeger.combo++;
+            if (judge != "Good")
+            {
+                ScoreManeger.combo += amount;
+            }
         }
 
         switch(judge)
         {
-            case "Perfect": ScoreManeger.score += 5; ResultUI.Perfect++; break;
-            case "Good": ScoreManeger.score += 3; ResultUI.Good++; break;
-            case "Bad": ResultUI.Bad++; break;
+            case "PerfectPlus": 
+                ScoreManeger.score += 21; 
+                ResultUI.PerfectPlus++; 
+                if (!isAuto) { if (isLate) ResultUI.PerfectPlusLate++; else ResultUI.PerfectPlusFast++; }
+                break;
+            case "Perfect": 
+                ScoreManeger.score += 20; 
+                ResultUI.Perfect++; 
+                if (!isAuto) { if (isLate) ResultUI.PerfectLate++; else ResultUI.PerfectFast++; }
+                break;
+            case "Great": 
+                ScoreManeger.score += 16; 
+                ResultUI.Great++; 
+                if (!isAuto) { if (isLate) ResultUI.GreatLate++; else ResultUI.GreatFast++; }
+                break;
+            case "Good": 
+                ScoreManeger.score += 8; 
+                ResultUI.Good++; 
+                if (!isAuto) { if (isLate) ResultUI.GoodLate++; else ResultUI.GoodFast++; }
+                break;
+            case "Bad": 
+                ScoreManeger.score += 0; 
+                ResultUI.Bad++; 
+                if (!isAuto) { if (isLate) ResultUI.BadLate++; else ResultUI.BadFast++; }
+                break;
             case "Miss": ResultUI.Miss += amount; break;
         }
 
@@ -271,34 +297,42 @@ public class LaneController : MonoBehaviour
             case 3: updateDebug = (j, s) => { DebugText.judged_l3 += j; DebugText.score_l3 += s; }; break;
             case 4: updateDebug = (j, s) => { DebugText.judged_l4 += j; DebugText.score_l4 += s; }; break;
         }
-        updateDebug(amount, judge == "Perfect" ? 5 : (judge == "Good" ? 3 : 0));
+        updateDebug(amount, judge == "PerfectPlus" ? 21 : (judge == "Perfect" ? 20 : (judge == "Great" ? 16 : (judge == "Good" ? 8 : (judge == "Bad" ? 0 : 0)))));
 
         Action<int> updateJudgeCount = (j) => {};
         switch(laneIndex)
         {
              case 1:
-                if(judge == "Perfect") DebugText.perfect_l1++;
+                if(judge == "PerfectPlus") DebugText.perfect_plus_l1++;
+                else if(judge == "Perfect") DebugText.perfect_l1++;
+                else if(judge == "Great") DebugText.great_l1++;
                 else if(judge == "Good") DebugText.good_l1++;
                 else if(judge == "Bad") DebugText.bad_l1++;
                 else if(judge == "Miss") DebugText.miss_l1 += amount;
                 adata.clicked_L1 += amount;
                 break;
             case 2:
-                if(judge == "Perfect") DebugText.perfect_l2++;
+                if(judge == "PerfectPlus") DebugText.perfect_plus_l2++;
+                else if(judge == "Perfect") DebugText.perfect_l2++;
+                else if(judge == "Great") DebugText.great_l2++;
                 else if(judge == "Good") DebugText.good_l2++;
                 else if(judge == "Bad") DebugText.bad_l2++;
                 else if(judge == "Miss") DebugText.miss_l2 += amount;
                 adata.clicked_L2 += amount;
                 break;
             case 3:
-                if(judge == "Perfect") DebugText.perfect_l3++;
+                if(judge == "PerfectPlus") DebugText.perfect_plus_l3++;
+                else if(judge == "Perfect") DebugText.perfect_l3++;
+                else if(judge == "Great") DebugText.great_l3++;
                 else if(judge == "Good") DebugText.good_l3++;
                 else if(judge == "Bad") DebugText.bad_l3++;
                 else if(judge == "Miss") DebugText.miss_l3 += amount;
                 adata.clicked_L3 += amount;
                 break;
             case 4:
-                if(judge == "Perfect") DebugText.perfect_l4++;
+                if(judge == "PerfectPlus") DebugText.perfect_plus_l4++;
+                else if(judge == "Perfect") DebugText.perfect_l4++;
+                else if(judge == "Great") DebugText.great_l4++;
                 else if(judge == "Good") DebugText.good_l4++;
                 else if(judge == "Bad") DebugText.bad_l4++;
                 else if(judge == "Miss") DebugText.miss_l4 += amount;
@@ -309,7 +343,8 @@ public class LaneController : MonoBehaviour
 
     private void ShowJudgementEffect(string judge) {
         GameObject prefab = null;
-        if(judge == "Perfect") prefab = adata.p;
+        if(judge == "Perfect" || judge == "PerfectPlus") prefab = adata.p;
+        else if(judge == "Great") prefab = adata.gr;
         else if(judge == "Good") prefab = adata.g;
         else if(judge == "Bad") prefab = adata.b;
         else if(judge == "Miss") prefab = adata.m;
@@ -317,6 +352,23 @@ public class LaneController : MonoBehaviour
         if (prefab != null)
         {
             GameObject h = Instantiate(prefab, judgeEffectPosition, Quaternion.Euler(68.85f, 0.0f, 0.0f));
+            if (judge == "PerfectPlus")
+            {
+                var sr = h.GetComponentInChildren<SpriteRenderer>();
+                if (sr != null)
+                {
+                    sr.color = new Color32(236, 255, 0, 255);
+                }
+                else
+                {
+                    // Fallback to Image if it's UI based
+                    var img = h.GetComponentInChildren<UnityEngine.UI.Image>();
+                    if (img != null)
+                    {
+                        img.color = new Color32(236, 255, 0, 255);
+                    }
+                }
+            }
             h.GetComponent<goodbye>().SetInstantiatorName(id.ToString(), laneIndex);
         }
     }
@@ -344,7 +396,8 @@ public class LaneController : MonoBehaviour
             if (type == "long")
             {
                 endsec = (float)cd["endtime"];
-                length = (originalSpeed * (endsec - arrsec)) / 2;
+                float effectiveArrsec = long_click ? Mathf.Min(game_time, endsec) : arrsec;
+                length = (originalSpeed * (endsec - effectiveArrsec)) / 2;
                 transform.localScale = new Vector3(0.7f, 0.01f, length);
             }
             transform.position = new Vector3(
@@ -390,19 +443,19 @@ public class LaneController : MonoBehaviour
             {
                 if (type == "tap" && (arrsec - game_time <= adata.auto))
                 {
-                    ShowJudgementEffect("Perfect"); UpdateScore("Perfect");
+                    ShowJudgementEffect("PerfectPlus"); UpdateScore("PerfectPlus", 1, false, true);
                     await RecycleOrDestroy();
                 }
                 else if (type == "long")
                 {
                     if (!long_click && (arrsec - game_time <= adata.auto))
                     {
-                        ShowJudgementEffect("Perfect"); UpdateScore("Perfect");
+                        ShowJudgementEffect("PerfectPlus"); UpdateScore("PerfectPlus", 1, false, true);
                         long_click = true;
                     }
                     if (long_click && !LongNoteDetermined && (game_time >= endsec))
                     {
-                        ShowJudgementEffect("Perfect"); UpdateScore("Perfect");
+                        ShowJudgementEffect("PerfectPlus"); UpdateScore("PerfectPlus", 1, false, true);
                         LongNoteDetermined = true;
                         await RecycleOrDestroy();
                     }
@@ -416,6 +469,7 @@ public class LaneController : MonoBehaviour
             bool keyHeld = Input.GetKey(inputKey) || Input.GetKey(controllerKey);
             bool mousePress = Input.GetMouseButtonDown(0) && IsMouseOverLane();
             bool mouseHeld = Input.GetMouseButton(0) && IsMouseOverLane();
+            bool isLate = (game_time - arrsec) > 0;
 
             // Anti-Ghosting: If input was already used this frame for this lane, ignore it for this note.
             if ((keyPress || mousePress) && LastJudgedFrame == Time.frameCount)
@@ -428,9 +482,12 @@ public class LaneController : MonoBehaviour
             {
                 if (keyPress || mousePress)
                 {
-                    if (timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect"); LastJudgedFrame = Time.frameCount; }
-                    else if (timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good"); LastJudgedFrame = Time.frameCount; }
-                    else if (timelag <= adata.bad) { ShowJudgementEffect("Bad"); UpdateScore("Bad"); LastJudgedFrame = Time.frameCount; }
+                    if (timelag <= adata.perfect_plus) { ShowJudgementEffect("PerfectPlus"); UpdateScore("PerfectPlus", 1, isLate); LastJudgedFrame = Time.frameCount; }
+                    else if (timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect", 1, isLate); LastJudgedFrame = Time.frameCount; }
+                    else if (timelag <= adata.great) { ShowJudgementEffect("Great"); UpdateScore("Great", 1, isLate); LastJudgedFrame = Time.frameCount; }
+                    else if (timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good", 1, isLate); LastJudgedFrame = Time.frameCount; }
+                    //else if (timelag <= adata.bad) { ShowJudgementEffect("Bad"); UpdateScore("Bad", 1, isLate); LastJudgedFrame = Time.frameCount; }
+                    else if (timelag <= adata.miss) { ShowJudgementEffect("Miss"); UpdateScore("Miss", 1, isLate); LastJudgedFrame = Time.frameCount; }
                     else { return; } // Input too early/late, ignore
                     await RecycleOrDestroy();
                 }
@@ -446,13 +503,13 @@ public class LaneController : MonoBehaviour
                 {
                     if (keyPress || mousePress)
                     {
-                        if (timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect"); long_click = true; LastJudgedFrame = Time.frameCount; }
-                        else if (timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good"); long_click = true; LastJudgedFrame = Time.frameCount; }
-                        else if (timelag <= adata.bad) {
-                            ShowJudgementEffect("Bad"); UpdateScore("Bad", 2);
-                            LongNoteDetermined = true;
-                            LastJudgedFrame = Time.frameCount;
-                        }
+                        if (timelag <= adata.perfect_plus) { ShowJudgementEffect("PerfectPlus"); UpdateScore("PerfectPlus", 1, isLate); long_click = true; LastJudgedFrame = Time.frameCount; }
+                        else if (timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect", 1, isLate); long_click = true; LastJudgedFrame = Time.frameCount; }
+                        else if (timelag <= adata.great) { ShowJudgementEffect("Great"); UpdateScore("Great", 1, isLate); long_click = true; LastJudgedFrame = Time.frameCount; }
+                        else if (timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good", 1, isLate); long_click = true; LastJudgedFrame = Time.frameCount; }
+                        //else if (timelag <= adata.bad) { ShowJudgementEffect("Bad"); UpdateScore("Bad", 2, isLate); LongNoteDetermined = true; LastJudgedFrame = Time.frameCount; }
+                        else if (timelag <= adata.miss) { ShowJudgementEffect("Miss"); UpdateScore("Miss", 2, isLate); LongNoteDetermined = true; LastJudgedFrame = Time.frameCount; }
+                        else { return; } // Input too early/late, ignore
                     }
                     else if (game_time > arrsec + adata.miss)
                     {
@@ -467,14 +524,17 @@ public class LaneController : MonoBehaviour
                     if (!isHolding) // Player released key
                     {
                         float end_timelag = Mathf.Abs(game_time - endsec);
-                        if (end_timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect"); }
-                        else if (end_timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good"); }
-                        else { ShowJudgementEffect("Bad"); UpdateScore("Bad"); } // Released too early = Bad
+                        bool endIsLate = (game_time - endsec) > 0;
+                        if (end_timelag <= adata.perfect_plus) { ShowJudgementEffect("PerfectPlus"); UpdateScore("PerfectPlus", 1, endIsLate); }
+                        else if (end_timelag <= adata.perfect) { ShowJudgementEffect("Perfect"); UpdateScore("Perfect", 1, endIsLate); }
+                        else if (end_timelag <= adata.great) { ShowJudgementEffect("Great"); UpdateScore("Great", 1, endIsLate); }
+                        else if (end_timelag <= adata.good) { ShowJudgementEffect("Good"); UpdateScore("Good", 1, endIsLate); }
+                        else if (end_timelag <= adata.miss) { ShowJudgementEffect("Miss"); UpdateScore("Miss", 1, endIsLate); } // Released too early = Miss
                         LongNoteDetermined = true;
                     }
                     else if (game_time >= endsec) // Player held until the end
                     {
-                        ShowJudgementEffect("Perfect"); UpdateScore("Perfect");
+                        ShowJudgementEffect("PerfectPlus"); UpdateScore("PerfectPlus", 1, false, true);
                         LongNoteDetermined = true;
                     }
                 }

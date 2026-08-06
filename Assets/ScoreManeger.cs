@@ -37,73 +37,33 @@ public class ScoreManeger : MonoBehaviour
         maxscore = 0;
         ratioscore = 0;
 
-        JObject jsonObj = adata.jsonObj;
-        JObject chartdata = (JObject)jsonObj["chartdata"];
-
-        // L1
-        JObject l1_chart = (JObject)chartdata["L1"];
-        for (int i = 1; i <= l1_chart.Properties().Count() -1; i++)
-        {
-            if (l1_chart[i.ToString()]["type"] + "" == "tap")
-            {
-                notes++;
-                l1_notes++;
-            }
-            else if (l1_chart[i.ToString()]["type"] + "" == "long")
-            {
-                notes += 2;
-                l1_notes += 2;
-            }
+        foreach (var note in adata.L1Notes.Values) {
+            int cnt = note.type == "long" ? 2 : 1;
+            notes += cnt;
+            l1_notes += cnt;
         }
 
         // L2
-        JObject l2_chart = (JObject)chartdata["L2"];
-        for (int i = 1; i <= l2_chart.Properties().Count() - 1; i++)
-        {
-            if (l2_chart[i.ToString()]["type"] + "" == "tap")
-            {
-                notes++;
-                l2_notes++;
-            }
-            else if (l2_chart[i.ToString()]["type"] + "" == "long")
-            {
-                notes += 2;
-                l2_notes += 2;
-            }
+        foreach (var note in adata.L2Notes.Values) {
+            int cnt = note.type == "long" ? 2 : 1;
+            notes += cnt;
+            l2_notes += cnt;
         }
 
         // L3
-        JObject l3_chart = (JObject)chartdata["L3"];
-        for (int i = 1; i <= l3_chart.Properties().Count() - 1; i++)
-        {
-            if (l3_chart[i.ToString()]["type"] + "" == "tap")
-            {
-                notes++;
-                l3_notes++;
-            }
-            else if (l3_chart[i.ToString()]["type"] + "" == "long")
-            {
-                notes += 2;
-                l3_notes += 2;
-            }
+        foreach (var note in adata.L3Notes.Values) {
+            int cnt = note.type == "long" ? 2 : 1;
+            notes += cnt;
+            l3_notes += cnt;
         }
 
         // L4
-        JObject l4_chart = (JObject)chartdata["L4"];
-        for (int i = 1; i <= l4_chart.Properties().Count() - 1; i++)
-        {
-            if (l4_chart[i.ToString()]["type"] + "" == "tap")
-            {
-                notes++;
-                l4_notes++;
-            }
-            else if (l4_chart[i.ToString()]["type"] + "" == "long")
-            {
-                notes += 2;
-                l4_notes += 2;
-            }
+        foreach (var note in adata.L4Notes.Values) {
+            int cnt = note.type == "long" ? 2 : 1;
+            notes += cnt;
+            l4_notes += cnt;
         }
-        maxscore = notes * 5;
+        maxscore = notes * 21;
         Debug.Log("MaxCombo: " + notes);
 
         if (DebugText.isDebugMode)

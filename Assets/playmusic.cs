@@ -265,6 +265,13 @@ public class PlayMusic : MonoBehaviour
                 {
                     adata.game_time = audioSource.time - (offset / audioSource.clip.frequency) + adata.tlag;
                 }
+                else
+                {
+                    // 曲が始まる前(待機時間中)も、game_timeをマイナス値からスムーズに進行させる
+                    // これにより、UIのオフセット(tlag)を設定した際もワープせずにスムーズに落下するようになります
+                    float freq = (audioSource.clip != null) ? audioSource.clip.frequency : 44100f;
+                    adata.game_time = time - 8.0f - (offset / freq);
+                }
 
                 // �I�[�f�B�I�̍Đ���Ԃ��`�F�b�N
                 if (played && !audioSource.isPlaying && !audioFinished)

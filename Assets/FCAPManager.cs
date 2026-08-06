@@ -16,15 +16,23 @@ public class FCAPManager : MonoBehaviour
     void Update()
     {
         if (!adata.fcap_ed && !adata.showResult) {
-            if (ScoreManeger.ratioscore >= 1000000)
+            if (adata.progress >= 100.0f)
             {
-                // All Perfect
-                Debug.Log("AP");
-                Instantiate((GameObject)Resources.Load("Animations/AllPerfect")).transform.SetParent(canvas.transform);
-                adata.fcap_ed = true;
-            }
-            else if (adata.progress >= 100.0f)
-            {
+                if (ScoreManeger.ratioscore >= 1000000)
+                {
+                    // All Perfect
+                    Debug.Log("APP");
+                    Instantiate((GameObject)Resources.Load("Animations/AllPerfectPlus")).transform.SetParent(canvas.transform);
+                    adata.fcap_ed = true;
+                }
+                else if (ResultUI.PerfectPlus + ResultUI.Perfect >= ScoreManeger.notes)
+                {
+                    // All Perfect
+                    Debug.Log("AP");
+                    Instantiate((GameObject)Resources.Load("Animations/AllPerfect")).transform.SetParent(canvas.transform);
+                    adata.fcap_ed = true;
+                }
+                else
                 if (ScoreManeger.combo == ScoreManeger.notes)
                 {
                     // Full Combo
