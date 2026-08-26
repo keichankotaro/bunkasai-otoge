@@ -132,7 +132,7 @@ public class ResultUI : MonoBehaviour
             GoodText.GetComponent<TextMeshProUGUI>().text = "Good: " + good;
             //BadText.GetComponent<TextMeshProUGUI>().text = "Bad: " + bad;
             MissText.GetComponent<TextMeshProUGUI>().text = "Miss: " + miss;
-            Rank = adata.auto_play ? "Auto" : (score > 990000) ? "SSS+" : (score > 980000) ? "SSS" : (score > 950000) ? "SS" : (score > 900000) ? "S" : (score > 850000) ? "AAA" : (score > 800000) ? "AA" : (score > 750000) ? "A" : (score > 700000) ? "BBB" : (score > 650000) ? "BB" : (score > 600000) ? "B" : (score > 550000) ? "C" : "D";
+            Rank = adata.auto_play ? "Auto" : (score > 990000) ? "SSS+" : (score > 980000) ? "SSS" : (score > 975000) ? "SS+" : (score > 950000) ? "SS" : (score > 925000) ? "S+" : (score > 900000) ? "S" : (score > 850000) ? "AAA" : (score > 800000) ? "AA" : (score > 750000) ? "A" : (score > 700000) ? "BBB" : (score > 650000) ? "BB" : (score > 600000) ? "B" : (score > 550000) ? "C" : "D";
             RankText.GetComponent<TextMeshProUGUI>().text = Rank;
             MusicText.GetComponent<TextMeshProUGUI>().text = music;
             LevelText.GetComponent<TextMeshProUGUI>().text = level;
