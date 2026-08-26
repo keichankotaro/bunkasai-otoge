@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections;
@@ -296,8 +296,21 @@ public class UI : MonoBehaviour
     private IEnumerator SetupProcessCoroutine()
     {
         NowPage = 0;
+
+        // リザルトから戻った場合、最後にプレイした曲をハイライトする
+        // adata.chart は "Difficulty/曲名" の形式で保持されている
+        if (!string.IsNullOrEmpty(adata.chart) && adata.chart.Contains("/"))
+        {
+            string lastPlayedMusic = adata.chart.Split('/')[1];
+            int lastPlayedIndex = Musics.IndexOf(lastPlayedMusic);
+            if (lastPlayedIndex >= 0)
+            {
+                NowPage = lastPlayedIndex;
+            }
+        }
+
         LevelExists = (httpJsonObj["diffs"] as JArray).ToObject<List<List<bool>>>();
-        PageNo.GetComponent<TextMeshProUGUI>().text = $"1/{Musics.Count}";
+        PageNo.GetComponent<TextMeshProUGUI>().text = $"{NowPage + 1}/{Musics.Count}";
         UpdateLevelTexts();
 
         for (int i = 0; i < Musics.Count; i++)
@@ -305,7 +318,7 @@ public class UI : MonoBehaviour
             MusicObj.Add(Instantiate(MusicPrefab));
             MusicObj[i].transform.parent = canvas.transform;
             Vector3 pos = MusicObj[i].transform.position;
-            pos.x = 0.0f + 500.0f * i;
+            pos.x = 500.0f * (i - NowPage);
             pos.y = 0.0f;
             pos.z = 0.0f;
             MusicObj[i].transform.position = pos;

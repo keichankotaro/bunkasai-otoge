@@ -26,9 +26,9 @@ public class adata : MonoBehaviour
     public static GameObject m = (GameObject)Resources.Load("Prefab/Miss");
     // 各種スコア
     public static int perfect_plus_score = 100;
-    public static int perfect_score = 95;
-    public static int great_score = 75;
-    public static int good_score = 30;
+    public static int perfect_score = 90;
+    public static int great_score = 50;
+    public static int good_score = 10;
     public static int bad_score = 0; // bad廃止の為未使用
     public static int miss_score = 0;
     // デバッグ用プレハブ
