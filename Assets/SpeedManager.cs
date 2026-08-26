@@ -18,6 +18,9 @@ public class SpeedManager : MonoBehaviour
     private bool setupped = false;
     // 変化の有無
     private bool change = false;
+    
+    private bool inFormula = false;
+    private float formulaStartMultiplier = 1.0f;
 
     // Start is called before the first frame update
     private void Setup()
@@ -77,11 +80,15 @@ public class SpeedManager : MonoBehaviour
                         
                         if (t >= 0f && t <= 1f)
                         {
+                            if (!inFormula)
+                            {
+                                formulaStartMultiplier = adata.speed / adata.default_speed;
+                                inFormula = true;
+                            }
+
                             float factor = CubicBezier.Evaluate(t, x1, y1, x2, y2);
-                            //float currentMultiplier = Mathf.Lerp(adata.speed, targetMultiplier, factor);
-                            //Debug.Log("t=" + t + ", startTime=" + startTime + ", duration=" + duration + ", targetMultiplier=" + targetMultiplier + ", factor=" + factor + ", nowSpeed=" + adata.speed);
-                            adata.speed = adata.default_speed * factor;
-                            //Debug.Log("speed=" + adata.speed + ", t=" + t);
+                            float currentMultiplier = Mathf.Lerp(formulaStartMultiplier, targetMultiplier, factor);
+                            adata.speed = adata.default_speed * currentMultiplier;
 
                             JObject payload = new JObject();
                             payload["event"] = "formula_update";
@@ -104,6 +111,7 @@ public class SpeedManager : MonoBehaviour
                         {
                             adata.speed = adata.default_speed * targetMultiplier;
                             changed++;
+                            inFormula = false;
 
                             JObject payload = new JObject();
                             payload["event"] = "formula_end";
