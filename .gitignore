@@ -102,3 +102,6 @@ crashlytics-build.properties
 # バックアップ(アーカイブ)類
 *.rar
 *.zip
+*.html
+
+agy-code.txt
