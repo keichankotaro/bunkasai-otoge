@@ -388,18 +388,24 @@ public class PlayMusic : MonoBehaviour
         {
             yield return durationRequest.SendWebRequest();
 
-            if (durationRequest.result != UnityWebRequest.Result.Success)
+            if (durationRequest.result == UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Failed to get duration info: {durationRequest.error}");
-                started_dl = false;
-                yield break;
+                try
+                {
+                    string durationJson = durationRequest.downloadHandler.text;
+                    JObject durationData = JObject.Parse(durationJson);
+                    audioDuration = float.Parse(durationData["duration"].ToString());
+                    expectedContentLength = durationData["length"].ToObject<float>();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to parse duration info: {e.Message}");
+                }
             }
-
-            // Parse the duration response
-            string durationJson = durationRequest.downloadHandler.text;
-            JObject durationData = JObject.Parse(durationJson);
-            audioDuration = float.Parse(durationData["duration"].ToString());
-            expectedContentLength = durationData["length"].ToObject<float>(); // Get expected file size
+            else
+            {
+                Debug.LogWarning($"Failed to get duration info (ignoring): {durationRequest.error}");
+            }
         }
 
         // Now download the actual audio file
@@ -413,7 +419,15 @@ public class PlayMusic : MonoBehaviour
             // Track download progress
             while (!audioRequest.isDone)
             {
-                downloadProgress = audioRequest.downloadedBytes / expectedContentLength * 100f;
+                if (expectedContentLength > 0)
+                {
+                    downloadProgress = audioRequest.downloadedBytes / expectedContentLength * 100f;
+                }
+                else
+                {
+                    // Fallback progress if size is unknown
+                    downloadProgress = Mathf.Clamp(audioRequest.downloadedBytes / 5000000f * 100f, 0f, 99f);
+                }
 
                 if (progressText != null)
                 {
@@ -539,9 +553,19 @@ public class PlayMusic : MonoBehaviour
     public void PlayBgm()
     {
         string path = Path.Combine(Application.streamingAssetsPath, "audio.wav");
+        if (adata.isOfflineMode)
+        {
+            if (adata.jsonObj != null && adata.jsonObj["maindata"] != null)
+            {
+                string bgm = adata.jsonObj["maindata"]["music"].ToString();
+                string safeFileName = adata.GetSafeFileName(bgm);
+                path = Path.Combine(adata.musicPath, safeFileName + ".wav");
+            }
+        }
+
         if (!File.Exists(path))
         {
-            Debug.LogError("Audio file not found in StreamingAssets!");
+            Debug.LogError($"Audio file not found: {path}");
             return;
         }
 
@@ -550,7 +574,8 @@ public class PlayMusic : MonoBehaviour
 
     private IEnumerator LoadAndPlayAudio(string path)
     {
-        using (UnityWebRequest audioRequest = UnityWebRequestMultimedia.GetAudioClip("file://" + path.Replace("+", "%2B").Replace(" ", "+").Replace("?", "%3F").Replace("&", "%26"), AudioType.WAV))
+        string fileUri = new System.Uri(path).AbsoluteUri;
+        using (UnityWebRequest audioRequest = UnityWebRequestMultimedia.GetAudioClip(fileUri, AudioType.WAV))
         {
             yield return audioRequest.SendWebRequest();
 
