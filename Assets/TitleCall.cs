@@ -1,15 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class TitleCall : MonoBehaviour
 {
     public AudioSource titleAudioSource;
+    public TextMeshProUGUI titleText;
     private bool played = false;
     private float duration = 2.0f;
     private bool isChangingScene = false;
+    private float time = 0f;
+    private bool show = true;
     // Start is called before the first frame update
     void Start()
     {
@@ -62,11 +67,25 @@ public class TitleCall : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        time += Time.deltaTime;
         if (Input.anyKeyDown && played && !isChangingScene)
         {
             Debug.Log("シーン遷移開始");
             isChangingScene = true; // 遷移処理を開始 (連打防止)
             StartCoroutine(DoSceneChange());
+        }
+
+        if (time >= 0.5f && !show)
+        {
+            titleText.text = "文化祭音ゲー（仮称）\r\n\r\n\r\n\r\n\r\n- Press any key to start -";
+            time = 0f;
+            show = true;
+        }
+        if (time >= 2f && show)
+        {
+            titleText.text = "文化祭音ゲー（仮称）\r\n\r\n\r\n\r\n\r\n\r\n";
+            time = 0f;
+            show = false;
         }
     }
 
