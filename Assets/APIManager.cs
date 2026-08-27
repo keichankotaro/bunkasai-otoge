@@ -81,7 +81,9 @@ public class APIManager : MonoBehaviour
     }
 
     private Dictionary<string, int> _highScores = new Dictionary<string, int>();
+    private Dictionary<string, int> _highScoresWithDiff = new Dictionary<string, int>();
     private bool _highScoresFetched = false;
+    public Action OnHighScoresUpdated;
 
     public int GetHighScore(string songTitle)
     {
@@ -89,10 +91,17 @@ public class APIManager : MonoBehaviour
         return score;
     }
 
+    public int GetHighScore(string songTitle, string difficulty)
+    {
+        _highScoresWithDiff.TryGetValue(songTitle + "_" + difficulty, out int score);
+        return score;
+    }
+
     public void InvalidateHighScores()
     {
         _highScoresFetched = false;
         _highScores.Clear();
+        _highScoresWithDiff.Clear();
         Debug.Log("High score cache invalidated.");
     }
 
@@ -121,6 +130,7 @@ public class APIManager : MonoBehaviour
                         foreach (JObject scoreData in scores)
                         {
                             string songTitle = scoreData["song_title"].ToString();
+                            string difficulty = scoreData["difficulty"].ToString();
                             int highScore = scoreData["high_score"].ToObject<int>();
 
                             if (_highScores.ContainsKey(songTitle))
@@ -134,9 +144,13 @@ public class APIManager : MonoBehaviour
                             {
                                 _highScores.Add(songTitle, highScore);
                             }
+
+                            // Store specific difficulty score
+                            _highScoresWithDiff[songTitle + "_" + difficulty] = highScore;
                         }
                         _highScoresFetched = true;
                         Debug.Log("High scores fetched successfully.");
+                        OnHighScoresUpdated?.Invoke();
                     }
                     else
                     {
@@ -183,6 +197,118 @@ public class APIManager : MonoBehaviour
             {
                 Debug.Log("Result uploaded successfully!");
                 Debug.Log("Response: " + www.downloadHandler.text);
+                InvalidateHighScores();
+            }
+        }
+    }
+
+    public IEnumerator Login(string username, string password, Action<bool, string> onComplete)
+    {
+        WWWForm form = new WWWForm();
+        form.AddField("username", username);
+        form.AddField("password", password);
+
+        using (UnityWebRequest www = UnityWebRequest.Post(BaseUrl + "login.cgi", form))
+        {
+            yield return www.SendWebRequest();
+
+            if (www.result == UnityWebRequest.Result.Success)
+            {
+                try
+                {
+                    JObject response = JObject.Parse(www.downloadHandler.text);
+                    if (response["status"].ToString() == "success")
+                    {
+                        _bearerToken = response["token"]?.ToString();
+                        Debug.Log("Login successful. Token received: " + _bearerToken);
+                        onComplete?.Invoke(true, "");
+                    }
+                    else
+                    {
+                        string msg = response["message"]?.ToString() ?? "Unknown error";
+                        Debug.LogError("Login returned error: " + msg);
+                        onComplete?.Invoke(false, msg);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("Login parse error: " + e.Message + "\nResponse: " + www.downloadHandler.text);
+                    onComplete?.Invoke(false, "Parse error: " + e.Message);
+                }
+            }
+            else
+            {
+                Debug.LogError("Login network error: " + www.error + "\nResponse: " + www.downloadHandler.text);
+                onComplete?.Invoke(false, "Network error: " + www.error);
+            }
+        }
+    }
+
+    public IEnumerator GetMyInfo(Action<bool, string> onComplete)
+    {
+        if (!IsLoggedIn())
+        {
+            onComplete?.Invoke(false, "Not logged in");
+            yield break;
+        }
+
+        using (UnityWebRequest www = UnityWebRequest.Get(BaseUrl + "get_my_info.cgi"))
+        {
+            www.SetRequestHeader("Authorization", "Bearer " + _bearerToken);
+            yield return www.SendWebRequest();
+            if (www.result == UnityWebRequest.Result.Success)
+            {
+                try
+                {
+                    JObject res = JObject.Parse(www.downloadHandler.text);
+                    if (res["status"].ToString() == "success")
+                    {
+                        onComplete?.Invoke(true, res["data"]["player_name"].ToString());
+                    }
+                    else
+                    {
+                        string msg = res["message"]?.ToString() ?? "Unknown error";
+                        Debug.LogError("GetMyInfo returned error: " + msg);
+                        onComplete?.Invoke(false, msg);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("GetMyInfo parse error: " + e.Message + "\nResponse: " + www.downloadHandler.text);
+                    onComplete?.Invoke(false, "Parse error: " + e.Message);
+                }
+            }
+            else
+            {
+                Debug.LogError("GetMyInfo network error: " + www.error + "\nResponse: " + www.downloadHandler.text);
+                onComplete?.Invoke(false, "Network error: " + www.error);
+            }
+        }
+    }
+
+    public void Logout()
+    {
+        if (!string.IsNullOrEmpty(_bearerToken))
+        {
+            StartCoroutine(LogoutRoutine(_bearerToken));
+        }
+        _bearerToken = "";
+        InvalidateHighScores();
+    }
+
+    private IEnumerator LogoutRoutine(string token)
+    {
+        using (UnityWebRequest www = UnityWebRequest.Post(BaseUrl + "logout.cgi", new WWWForm()))
+        {
+            www.SetRequestHeader("Authorization", "Bearer " + token);
+            yield return www.SendWebRequest();
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogWarning("Failed to notify server of logout: " + www.error);
+            }
+            else
+            {
+                Debug.Log("Server session invalidated successfully.");
             }
         }
     }

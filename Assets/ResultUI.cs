@@ -22,6 +22,8 @@ public class ResultUI : MonoBehaviour
     [SerializeField] public GameObject Jacket;
 
     [Header("Counts Detail UI")]
+    public GameObject MaxComboText;
+    public GameObject DiffText;
     public GameObject CountsPanel;
     public GameObject CountsDetailPanel;
     public UnityEngine.UI.Button GoCountsDetailButton;
@@ -143,6 +145,35 @@ public class ResultUI : MonoBehaviour
             if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn() && !adata.auto_play)
             {
                 StartCoroutine(APIManager.Instance.UploadResult(music, adata.Difficulty, score));
+                
+                if (DiffText != null)
+                {
+                    int oldHighScore = APIManager.Instance.GetHighScore(music, adata.Difficulty);
+                    if (oldHighScore > 0)
+                    {
+                        int diff = score - oldHighScore;
+                        if (diff > 0)
+                        {
+                            DiffText.GetComponent<TextMeshProUGUI>().text = "+" + diff.ToString("N0");
+                        }
+                        else if (diff == 0)
+                        {
+                            DiffText.GetComponent<TextMeshProUGUI>().text = "±0";
+                        }
+                        else
+                        {
+                            DiffText.GetComponent<TextMeshProUGUI>().text = diff.ToString("N0");
+                        }
+                    }
+                    else
+                    {
+                        DiffText.GetComponent<TextMeshProUGUI>().text = "New Record!";
+                    }
+                }
+            }
+            else
+            {
+                if (DiffText != null) DiffText.GetComponent<TextMeshProUGUI>().text = "";
             }
 
             // Update result display flags
@@ -160,6 +191,11 @@ public class ResultUI : MonoBehaviour
                 // Reset when leaving the result screen
                 Result.GetComponent<CanvasGroup>().alpha = 0;
                 Result.GetComponent<Canvas>().sortingOrder = -1;
+                
+                if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn())
+                {
+                    StartCoroutine(APIManager.Instance.FetchHighScores());
+                }
                 ScoreManeger.combo = 0;
                 ScoreManeger.score = 0;
                 ScoreManeger.ratioscore = 0;
