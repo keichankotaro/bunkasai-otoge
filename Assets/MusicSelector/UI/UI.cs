@@ -374,7 +374,7 @@ public class UI : MonoBehaviour
         EasyText.GetComponent<TextMeshProUGUI>().text = httpJsonObj["levels"][NowPage][3] + "";
     }
 
-    private void MoveMusicSelection(int direction)
+    private void MoveMusicSelection(int direction, bool animate = true)
     {
         if (MusicObj == null || MusicObj.Count == 0) return;
 
@@ -384,7 +384,15 @@ public class UI : MonoBehaviour
             Moved = 0;
             for (int i = 0; i < MusicObj.Count; i++)
             {
-                StartCoroutine(MoveMusic(MusicObj[i], direction, 0.05f));
+                if (animate)
+                {
+                    StartCoroutine(MoveMusic(MusicObj[i], direction, 0.05f));
+                }
+                else
+                {
+                    MusicObj[i].transform.position = new Vector3(MusicObj[i].transform.position.x - 500f * direction, MusicObj[i].transform.position.y, MusicObj[i].transform.position.z);
+                    Moved++;
+                }
             }
 
             PageNo.GetComponent<TextMeshProUGUI>().text = $"{NowPage + 1}/{MusicObj.Count}";
@@ -395,19 +403,19 @@ public class UI : MonoBehaviour
         }
     }
 
-    private void ProcessMove(int direction)
+    private void ProcessMove(int direction, bool animate = true)
     {
         if (MusicObj == null || MusicObj.Count == 0) return;
 
         if (direction == 1)
         {
-            if (NowPage == MusicObj.Count - 1) MoveMusicSelection(-NowPage);
-            else MoveMusicSelection(1);
+            if (NowPage == MusicObj.Count - 1) MoveMusicSelection(-NowPage, animate);
+            else MoveMusicSelection(1, animate);
         }
         else if (direction == -1)
         {
-            if (NowPage == 0) MoveMusicSelection(MusicObj.Count - 1);
-            else MoveMusicSelection(-1);
+            if (NowPage == 0) MoveMusicSelection(MusicObj.Count - 1, animate);
+            else MoveMusicSelection(-1, animate);
         }
     }
 
@@ -941,12 +949,12 @@ public class UI : MonoBehaviour
                     TempClickTime += Time.deltaTime;
                     LastMove += Time.deltaTime;
 
-                    const float longPressStartThreshold = 0.5f;
-                    const float longPressInterval = 0.1f;
+                    const float longPressStartThreshold = 0.4f;
+                    const float longPressInterval = 0.05f;
                     if (TempClickTime > longPressStartThreshold && LastMove > longPressInterval)
                     {
                         LastMove = 0f;
-                        ProcessMove(currentDirection);
+                        ProcessMove(currentDirection, false); // 長押し時はアニメーションなし
                     }
                 }
                 else

@@ -20,10 +20,10 @@ public class TitleCall : MonoBehaviour
             titleAudioSource.clip = bgmClip;
             titleAudioSource.volume = 0.0f; // 0からスタート
             titleAudioSource.loop = true;
-            titleAudioSource.Play();
+            //titleAudioSource.Play();
 
             // フェードインを開始
-            StartCoroutine(FadeIn(duration));
+            //StartCoroutine(FadeIn(duration));
             played = true; // これでUpdate内の処理は実行されなくなる
         }
         else
@@ -73,7 +73,8 @@ public class TitleCall : MonoBehaviour
     private IEnumerator DoSceneChange()
     {
         // まずFadeOutコルーチンを呼び出し、終わるまで待つ (yield return)
-        yield return StartCoroutine(FadeOut(duration));
+        //yield return StartCoroutine(FadeOut(duration));
+        yield return null;
 
         // FadeOutが終わったらシーンをロードする
         SceneManager.LoadScene("Otoge-Scene");

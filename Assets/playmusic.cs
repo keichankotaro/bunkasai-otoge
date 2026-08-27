@@ -103,6 +103,9 @@ public class PlayMusic : MonoBehaviour
                 bgm = jsonObj["maindata"]["music"].ToString();
                 if (adata.isOfflineMode)
                 {
+                    string safeFileName = adata.GetSafeFileName(bgm);
+                    string videoPath = Path.Combine(adata.musicPath, safeFileName + ".mp4");
+                    videoExists = File.Exists(videoPath);
                     audioDownloaded = true;
                     adata.ready_to_start = true;
                 }
@@ -127,22 +130,36 @@ public class PlayMusic : MonoBehaviour
                     bgTransform = BackGround.transform;
                     bgPos = bgTransform.position;
 
-                    /*
-                    if (isVideoExists(bgm))
+                    if (videoExists)
                     {
-                        videoClip = Resources.Load<VideoClip>("Videos/" + bgm);
                         videoPlayer = Plane.GetComponent<VideoPlayer>();
-                        videoPlayer.clip = videoClip;
-                        videoExists = true;
+                        
+                        // 背景としてカメラの最奥に直接描画する設定
+                        videoPlayer.renderMode = VideoRenderMode.CameraFarPlane;
+                        videoPlayer.targetCamera = Camera.main;
+                        videoPlayer.aspectRatio = VideoAspectRatio.FitOutside; // 画面全体にフィットさせる
+                        
+                        // 3Dの板(Plane)自体が描画されて貫通するのを防ぐため、メッシュ描画をオフにする
+                        MeshRenderer mesh = Plane.GetComponent<MeshRenderer>();
+                        if (mesh != null) mesh.enabled = false;
+
+                        videoPlayer.source = VideoSource.Url;
+                        if (adata.isOfflineMode)
+                        {
+                            string safeFileName = adata.GetSafeFileName(bgm);
+                            videoPlayer.url = Path.Combine(adata.musicPath, safeFileName + ".mp4");
+                        }
+                        else
+                        {
+                            videoPlayer.url = Path.Combine(Application.streamingAssetsPath, "video.mp4");
+                        }
                         bgPos.y = -3.89f;
                         videoPlayer.Play();
                     }
                     else
                     {
-                        videoExists = false;
                         bgPos.y = -3.87f;
                     }
-                    */
 
                     settedUp = true;
                     audioFinished = false;
@@ -298,6 +315,7 @@ public class PlayMusic : MonoBehaviour
                         if (videoExists)
                         {
                             videoPlayer.Stop();
+                            videoPlayer.url = ""; // ファイルのロックを解除する
                         }
                         bgPos.y = -3.87f;
                         bgTransform.position = bgPos;
@@ -370,17 +388,24 @@ public class PlayMusic : MonoBehaviour
         {
             yield return durationRequest.SendWebRequest();
 
-            if (durationRequest.result != UnityWebRequest.Result.Success)
+            if (durationRequest.result == UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Failed to get duration info: {durationRequest.error}");
-                yield break;
+                try
+                {
+                    string durationJson = durationRequest.downloadHandler.text;
+                    JObject durationData = JObject.Parse(durationJson);
+                    audioDuration = float.Parse(durationData["duration"].ToString());
+                    expectedContentLength = durationData["length"].ToObject<float>();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to parse duration info: {e.Message}");
+                }
             }
-
-            // Parse the duration response
-            string durationJson = durationRequest.downloadHandler.text;
-            JObject durationData = JObject.Parse(durationJson);
-            audioDuration = float.Parse(durationData["duration"].ToString());
-            expectedContentLength = durationData["length"].ToObject<float>(); // Get expected file size
+            else
+            {
+                Debug.LogWarning($"Failed to get duration info (ignoring): {durationRequest.error}");
+            }
         }
 
         // Now download the actual audio file
@@ -394,7 +419,15 @@ public class PlayMusic : MonoBehaviour
             // Track download progress
             while (!audioRequest.isDone)
             {
-                downloadProgress = audioRequest.downloadedBytes / expectedContentLength * 100f;
+                if (expectedContentLength > 0)
+                {
+                    downloadProgress = audioRequest.downloadedBytes / expectedContentLength * 100f;
+                }
+                else
+                {
+                    // Fallback progress if size is unknown
+                    downloadProgress = Mathf.Clamp(audioRequest.downloadedBytes / 5000000f * 100f, 0f, 99f);
+                }
 
                 if (progressText != null)
                 {
@@ -407,6 +440,7 @@ public class PlayMusic : MonoBehaviour
             if (audioRequest.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError($"Failed to download audio: {audioRequest.error}");
+                started_dl = false;
                 yield break;
             }
 
@@ -418,33 +452,120 @@ public class PlayMusic : MonoBehaviour
                 string path = Path.Combine(Application.streamingAssetsPath, "audio.wav");
                 File.WriteAllBytes(path, audioData);
 
-                // Update progress and flags
-                downloadProgress = 100f;
-                audioDownloaded = true;
-                adata.ready_to_start = true;
-
-                if (progressText != null)
-                {
-                    progressText.text = "";
-                    ProgressBar.value = 0f;
-                    ProgressBarFill.color = new Color32(0, 0, 0, 107);
-                }
-
+                // Update progress and flags for audio
                 Debug.Log($"Audio downloaded and saved successfully to {path}.");
             }
             else
             {
                 Debug.LogError("Downloaded audio data is null or empty!");
+                started_dl = false;
+                yield break;
             }
+        }
+
+        // Check if video exists
+        string videoExistsUrl = $"https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/videoExists?name={Uri.EscapeDataString(songName)}";
+        using (UnityWebRequest existsReq = UnityWebRequest.Get(videoExistsUrl))
+        {
+            yield return existsReq.SendWebRequest();
+            if (existsReq.result == UnityWebRequest.Result.Success)
+            {
+                try
+                {
+                    JObject existsData = JObject.Parse(existsReq.downloadHandler.text);
+                    videoExists = existsData["exists"].ToObject<bool>();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("Failed to parse videoExists response: " + e.Message);
+                    videoExists = false;
+                }
+            }
+            else
+            {
+                videoExists = false;
+            }
+        }
+
+        if (videoExists)
+        {
+            string videoUrl = $"https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getVideo?chart={Uri.EscapeDataString(songName)}";
+            Debug.Log($"Downloading video from: {videoUrl}");
+            using (UnityWebRequest videoReq = UnityWebRequest.Get(videoUrl))
+            {
+                videoReq.SendWebRequest();
+
+                while (!videoReq.isDone)
+                {
+                    downloadProgress = videoReq.downloadProgress * 100f;
+                    if (progressText != null)
+                    {
+                        progressText.text = $"動画をダウンロード中... {downloadProgress:F0}%";
+                        ProgressBar.value = downloadProgress;
+                    }
+                    yield return null;
+                }
+
+                if (videoReq.result == UnityWebRequest.Result.Success)
+                {
+                    byte[] videoData = videoReq.downloadHandler.data;
+                    if (videoData != null && videoData.Length > 0)
+                    {
+                        string videoPath = Path.Combine(Application.streamingAssetsPath, "video.mp4");
+                        try
+                        {
+                            File.WriteAllBytes(videoPath, videoData);
+                            Debug.Log($"Video downloaded and saved successfully to {videoPath}.");
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"Failed to save video file (it might be locked): {e.Message}");
+                            videoExists = false;
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError("Downloaded video data is null or empty!");
+                        videoExists = false;
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"Failed to download video: {videoReq.error}");
+                    videoExists = false;
+                }
+            }
+        }
+
+        // Update final progress and flags
+        downloadProgress = 100f;
+        audioDownloaded = true;
+        adata.ready_to_start = true;
+
+        if (progressText != null)
+        {
+            progressText.text = "";
+            ProgressBar.value = 0f;
+            ProgressBarFill.color = new Color32(0, 0, 0, 107);
         }
     }
 
     public void PlayBgm()
     {
         string path = Path.Combine(Application.streamingAssetsPath, "audio.wav");
+        if (adata.isOfflineMode)
+        {
+            if (adata.jsonObj != null && adata.jsonObj["maindata"] != null)
+            {
+                string bgm = adata.jsonObj["maindata"]["music"].ToString();
+                string safeFileName = adata.GetSafeFileName(bgm);
+                path = Path.Combine(adata.musicPath, safeFileName + ".wav");
+            }
+        }
+
         if (!File.Exists(path))
         {
-            Debug.LogError("Audio file not found in StreamingAssets!");
+            Debug.LogError($"Audio file not found: {path}");
             return;
         }
 
@@ -453,7 +574,8 @@ public class PlayMusic : MonoBehaviour
 
     private IEnumerator LoadAndPlayAudio(string path)
     {
-        using (UnityWebRequest audioRequest = UnityWebRequestMultimedia.GetAudioClip("file://" + path.Replace("+", "%2B").Replace(" ", "+").Replace("?", "%3F").Replace("&", "%26"), AudioType.WAV))
+        string fileUri = new System.Uri(path).AbsoluteUri;
+        using (UnityWebRequest audioRequest = UnityWebRequestMultimedia.GetAudioClip(fileUri, AudioType.WAV))
         {
             yield return audioRequest.SendWebRequest();
 
