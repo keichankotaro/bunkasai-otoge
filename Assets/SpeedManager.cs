@@ -26,6 +26,7 @@ public class SpeedManager : MonoBehaviour
     private TMPro.TextMeshProUGUI fromText;
     private TMPro.TextMeshProUGUI toText;
     private float lastChangeEndTime = -999f;
+    private bool enableSoflanPreview = false;
 
     // Start is called before the first frame update
     private void Setup()
@@ -48,6 +49,19 @@ public class SpeedManager : MonoBehaviour
         catch (NullReferenceException)
         {
             change = false;
+        }
+
+        string settingsFilePath = System.IO.Path.Combine(Application.persistentDataPath, "settings.json");
+        enableSoflanPreview = false;
+        if (System.IO.File.Exists(settingsFilePath))
+        {
+            try
+            {
+                string json = System.IO.File.ReadAllText(settingsFilePath);
+                JObject settings = JObject.Parse(json);
+                enableSoflanPreview = settings["enableSoflanPreview"]?.Value<bool>() ?? false;
+            }
+            catch (Exception) {}
         }
 
         if (speedChangesUI != null)
@@ -84,34 +98,37 @@ public class SpeedManager : MonoBehaviour
                 string targetText = "";
                 Color targetColor = Color.white;
 
-                if (inFormula)
+                if (enableSoflanPreview)
                 {
-                    shouldShowUI = true;
-                    if (changed < Changes.Count)
-                    {
-                        float targetMultiplier = float.Parse(Changes[changed][3] + "");
-                        targetText = "x" + targetMultiplier.ToString("F4");
-                        if (targetMultiplier > curMult) targetColor = new Color(1f, 0.4f, 0.4f);
-                        else if (targetMultiplier < curMult) targetColor = new Color(0.4f, 0.8f, 1f);
-                    }
-                }
-                else if (changed < Changes.Count)
-                {
-                    float nextTime = (Changes[changed][0]+"" == "formula") ? float.Parse(Changes[changed][1]+"") : float.Parse(Changes[changed][0]+"");
-                    float nextMult = (Changes[changed][0]+"" == "formula") ? float.Parse(Changes[changed][3]+"") : float.Parse(Changes[changed][1]+"");
-
-                    if (adata.game_time >= nextTime - 2.0f && adata.game_time <= nextTime + 0.1f) // Ensure it's active exactly until it starts, or slightly after
+                    if (inFormula)
                     {
                         shouldShowUI = true;
-                        targetText = "x" + nextMult.ToString("F4");
-                        if (nextMult > curMult) targetColor = new Color(1f, 0.4f, 0.4f);
-                        else if (nextMult < curMult) targetColor = new Color(0.4f, 0.8f, 1f);
+                        if (changed < Changes.Count)
+                        {
+                            float targetMultiplier = float.Parse(Changes[changed][3] + "");
+                            targetText = "x" + targetMultiplier.ToString("F2");
+                            if (targetMultiplier > curMult) targetColor = new Color(1f, 0.4f, 0.4f);
+                            else if (targetMultiplier < curMult) targetColor = new Color(0.4f, 0.8f, 1f);
+                        }
                     }
-                }
-                
-                if (!shouldShowUI && adata.game_time <= lastChangeEndTime + 1.0f)
-                {
-                    shouldShowUI = true;
+                    else if (changed < Changes.Count)
+                    {
+                        float nextTime = (Changes[changed][0]+"" == "formula") ? float.Parse(Changes[changed][1]+"") : float.Parse(Changes[changed][0]+"");
+                        float nextMult = (Changes[changed][0]+"" == "formula") ? float.Parse(Changes[changed][3]+"") : float.Parse(Changes[changed][1]+"");
+
+                        if (adata.game_time >= nextTime - 2.0f && adata.game_time <= nextTime + 0.1f) // Ensure it's active exactly until it starts, or slightly after
+                        {
+                            shouldShowUI = true;
+                            targetText = "x" + nextMult.ToString("F2");
+                            if (nextMult > curMult) targetColor = new Color(1f, 0.4f, 0.4f);
+                            else if (nextMult < curMult) targetColor = new Color(0.4f, 0.8f, 1f);
+                        }
+                    }
+                    
+                    if (!shouldShowUI && adata.game_time <= lastChangeEndTime + 1.0f)
+                    {
+                        shouldShowUI = true;
+                    }
                 }
 
                 if (speedChangesUI != null)
