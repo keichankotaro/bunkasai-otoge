@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 5856042220815104280}
   - component: {fileID: 8857861061143980143}
   - component: {fileID: 594547582781316943}
-  - component: {fileID: -3753843686941595417}
   - component: {fileID: -3487398019190588013}
   m_Layer: 0
   m_Name: Tap L3
@@ -65,7 +64,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 26581208152925e4c81df7082bbc191d, type: 2}
+  - {fileID: 2100000, guid: 8406978a9eae8124a97d3ddc210acbd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -121,29 +120,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   laneIndex: 3
---- !u!114 &-3753843686941595417
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4004860370181716769}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a00090ffa953630439cf2c280e2357cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  data: []
-  arrsec: 0
-  arrframe: 0
-  speed: 0
-  aid: 0
-  id: 0
-  json: 
-  loadjson: 
-  game_time: 0
-  time_reming: 0
-  now: 0
 --- !u!225 &-3487398019190588013
 CanvasGroup:
   m_ObjectHideFlags: 0
