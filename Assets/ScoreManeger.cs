@@ -134,8 +134,8 @@ public class ScoreManeger : MonoBehaviour
                 great_t.GetComponent<TextMeshProUGUI>().text = "Great: " + ResultUI.Great;
                 good_t.GetComponent<TextMeshProUGUI>().text = "Good: " + ResultUI.Good;
                 miss_t.GetComponent<TextMeshProUGUI>().text = "Miss: " + ResultUI.Miss;
-                fast_t.GetComponent<TextMeshProUGUI>().text = "Fast: " + (ResultUI.PerfectPlusFast + ResultUI.PerfectFast + ResultUI.GreatFast + ResultUI.GoodFast);
-                late_t.GetComponent<TextMeshProUGUI>().text = "Late: " + (ResultUI.PerfectPlusLate + ResultUI.PerfectLate + ResultUI.GreatLate + ResultUI.GoodLate);
+                fast_t.GetComponent<TextMeshProUGUI>().text = "Fast: " + (ResultUI.PerfectFast + ResultUI.GreatFast + ResultUI.GoodFast);
+                late_t.GetComponent<TextMeshProUGUI>().text = "Late: " + (ResultUI.PerfectLate + ResultUI.GreatLate + ResultUI.GoodLate);
 
                 if (DebugText.isDebugMode)
                 {

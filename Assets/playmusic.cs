@@ -143,7 +143,7 @@ public class PlayMusic : MonoBehaviour
                     {
                         LevelBackGround.GetComponent<Image>().color = new Color32(217, 0, 255, 255);
                     }
-                    else if (diff == "Normal")
+                    else if (diff == "Hard")
                     {
                         LevelBackGround.GetComponent<Image>().color = new Color32(255, 160, 0, 255);
                     }
