@@ -89,7 +89,7 @@ public class SetText : MonoBehaviour
         if (File.Exists(localImagePath))
         {
             byte[] fileData = File.ReadAllBytes(localImagePath);
-            Texture2D   texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+            Texture2D   texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             texture.LoadImage(fileData);
             ApplyTexture(texture);
             adata.loaded++;
@@ -105,7 +105,7 @@ public class SetText : MonoBehaviour
             {
                 byte[] imageData = www.downloadHandler.data;
                 File.WriteAllBytes(localImagePath, imageData);
-                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                 texture.LoadImage(imageData);
                 ApplyTexture(texture);
                 adata.loaded++;

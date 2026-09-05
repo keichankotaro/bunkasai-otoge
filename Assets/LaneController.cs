@@ -46,6 +46,10 @@ public class LaneController : MonoBehaviour
     private string raycastTargetName;
     private Vector3 judgeEffectPosition;
 
+    // Material
+    private Material noteMaterial;
+    private Material longNoteMaterial;
+
     // Cached data reference
     private Dictionary<int, adata.NoteInfo> currentLaneNotes;
 
@@ -127,7 +131,7 @@ public class LaneController : MonoBehaviour
     {
         float effectiveArrsec = (type == "long" && long_click) ? Mathf.Min(game_time, endsec) : arrsec;
         time_reming = (game_time - effectiveArrsec) * -1.0f;
-        now = (time_reming * (speed / 2)) - 9.51f;
+        now = (time_reming * (speed / 2)) - 10.08565f;
         return now;
     }
 
@@ -149,6 +153,7 @@ public class LaneController : MonoBehaviour
             {
                 string nextNoteType = nextNote.type;
                 name = $"{laneJsonId}_{(nextNoteType == "long" ? "long_" : "")}{newId}";
+                this.GetComponent<MeshRenderer>().sharedMaterial = (nextNoteType == "long" ? longNoteMaterial : noteMaterial);
                 await InitializeNote();
             }
             else
@@ -191,6 +196,8 @@ public class LaneController : MonoBehaviour
     private void Init_0()
     {
         jsonObj = adata.jsonObj;
+        noteMaterial = Resources.Load<Material>("UI/Stage/TapMat");
+        longNoteMaterial = Resources.Load<Material>("UI/Stage/LongMat");
     }
 
     private Task InitializeNote()
@@ -221,15 +228,19 @@ public class LaneController : MonoBehaviour
             {
                 endsec = note.endtime;
                 length = (speed / 2) * (endsec - arrsec) / 2;
-                GetComponent<Renderer>().material.color = new Color32(90, 255, 96, 255);
+                //GetComponent<Renderer>().material.color = new Color32(90, 255, 96, 255);
+                //GetComponent<Renderer>().material.color = new Color32(255, 255, 255, 255);
                 this.transform.localScale = new Vector3(0.7f, 0.01f, length);
+                this.GetComponent<MeshRenderer>().sharedMaterial = longNoteMaterial;
                 isLongNoteActive = true;
             }
             else // tap
             {
                 isLongNoteActive = false;
-                GetComponent<Renderer>().material.color = new Color32(0, 255, 232, 255);
+                //GetComponent<Renderer>().material.color = new Color32(0, 255, 232, 255);
+                //GetComponent<Renderer>().material.color = new Color32(255, 255, 255, 255);
                 transform.localScale = new Vector3(0.7f, 0.01f, 0.1f);
+                this.GetComponent<MeshRenderer>().sharedMaterial = noteMaterial;
             }
         }
         else
