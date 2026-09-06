@@ -160,28 +160,49 @@ public class ResultUI : MonoBehaviour
             if (ScoreManeger.ratioscore >= 1000000)
             {
                 // All Perfect+
+                var c_start = new Color32(255, 0, 250, 255);
+                var c_end = new Color32(0, 238, 255, 255);
+                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ResText.GetComponent<TextMeshProUGUI>().colorGradient = c;
                 ResText.GetComponent<TextMeshProUGUI>().text = "ALL PERFECT+";
             }
             else if (ResultUI.PerfectPlus + ResultUI.Perfect >= ScoreManeger.notes)
             {
                 // All Perfect
+                var c_start = new Color32(255, 0, 250, 255);
+                var c_end = new Color32(0, 238, 255, 255);
+                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ResText.GetComponent<TextMeshProUGUI>().colorGradient = c;
                 ResText.GetComponent<TextMeshProUGUI>().text = "ALL PERFECT";
             }
             else
             if (ScoreManeger.combo == ScoreManeger.notes)
             {
                 // Full Combo
+                var c_start = new Color32(255, 208, 0, 255);
+                var c_end = new Color32(255, 254, 218, 255);
+                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ResText.GetComponent<TextMeshProUGUI>().colorGradient = c;
                 ResText.GetComponent<TextMeshProUGUI>().text = "FULL COMBO";
             }
             else if (ScoreManeger.ratioscore >= 750000)
             {
                 // Clear
+                var c = new Color32(255, 208, 0, 255);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
                 ResText.GetComponent<TextMeshProUGUI>().text = "CLEAR";
+                ResText.GetComponent<TextMeshProUGUI>().color = c;
             }
             else
             {
                 // Failed
+                var c = new Color32(0, 0, 255, 255);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
                 ResText.GetComponent<TextMeshProUGUI>().text = "FAILED...";
+                ResText.GetComponent<TextMeshProUGUI>().color = c;
             }
 
             if (Rank == "D")
@@ -270,6 +291,7 @@ public class ResultUI : MonoBehaviour
 
                     if (diffText != null)
                     {
+                        /*
                         if (oldHighScore > 0)
                         {
                             diffText.text = "+" + diff.ToString("N0");
@@ -278,6 +300,8 @@ public class ResultUI : MonoBehaviour
                         {
                             diffText.text = "+" + diff.ToString("N0"); // 初プレイ時
                         }
+                        */
+                        diffText.text = "High Score " + score.ToString() + " +" + diff.ToString("N0");
                     }
                 }
                 else
