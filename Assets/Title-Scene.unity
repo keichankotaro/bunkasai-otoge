@@ -636,6 +636,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   titleAudioSource: {fileID: 2048226422}
+  titleText: {fileID: 1763791011}
 --- !u!82 &2048226422
 AudioSource:
   m_ObjectHideFlags: 0

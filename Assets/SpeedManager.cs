@@ -18,12 +18,24 @@ public class SpeedManager : MonoBehaviour
     private bool setupped = false;
     // 変化の有無
     private bool change = false;
+    
+    private bool inFormula = false;
+    private float formulaStartMultiplier = 1.0f;
+    
+    public GameObject speedChangesUI;
+    private TMPro.TextMeshProUGUI fromText;
+    private TMPro.TextMeshProUGUI toText;
+    private float lastChangeEndTime = -999f;
+    private bool enableSoflanPreview = false;
 
     // Start is called before the first frame update
     private void Setup()
     {
         // ここからセットアップ
         changed = 0;
+        lastChangeEndTime = -999f;
+        inFormula = false;
+        
         string chart = adata.chart;
         //string loadjson = Resources.Load<TextAsset>("Charts/" + chart).ToString();
 
@@ -37,6 +49,26 @@ public class SpeedManager : MonoBehaviour
         catch (NullReferenceException)
         {
             change = false;
+        }
+
+        string settingsFilePath = System.IO.Path.Combine(Application.persistentDataPath, "settings.json");
+        enableSoflanPreview = false;
+        if (System.IO.File.Exists(settingsFilePath))
+        {
+            try
+            {
+                string json = System.IO.File.ReadAllText(settingsFilePath);
+                JObject settings = JObject.Parse(json);
+                enableSoflanPreview = settings["enableSoflanPreview"]?.Value<bool>() ?? false;
+            }
+            catch (Exception) {}
+        }
+
+        if (speedChangesUI != null)
+        {
+            fromText = speedChangesUI.transform.Find("From")?.GetComponent<TMPro.TextMeshProUGUI>();
+            toText = speedChangesUI.transform.Find("To")?.GetComponent<TMPro.TextMeshProUGUI>();
+            speedChangesUI.SetActive(false);
         }
         // ここまでセットアップ
     }
@@ -60,6 +92,63 @@ public class SpeedManager : MonoBehaviour
             }
             if (change)
             {
+                // Calculate UI visibility and texts
+                bool shouldShowUI = false;
+                float curMult = adata.speed / adata.default_speed;
+                string targetText = "";
+                Color targetColor = Color.white;
+
+                if (enableSoflanPreview)
+                {
+                    if (inFormula)
+                    {
+                        shouldShowUI = true;
+                        if (changed < Changes.Count)
+                        {
+                            float targetMultiplier = float.Parse(Changes[changed][3] + "");
+                            targetText = "x" + targetMultiplier.ToString("F2");
+                            if (targetMultiplier > curMult) targetColor = new Color(1f, 0.4f, 0.4f);
+                            else if (targetMultiplier < curMult) targetColor = new Color(0.4f, 0.8f, 1f);
+                        }
+                    }
+                    else if (changed < Changes.Count)
+                    {
+                        float nextTime = (Changes[changed][0]+"" == "formula") ? float.Parse(Changes[changed][1]+"") : float.Parse(Changes[changed][0]+"");
+                        float nextMult = (Changes[changed][0]+"" == "formula") ? float.Parse(Changes[changed][3]+"") : float.Parse(Changes[changed][1]+"");
+
+                        if (adata.game_time >= nextTime - 2.0f && adata.game_time <= nextTime + 0.1f) // Ensure it's active exactly until it starts, or slightly after
+                        {
+                            shouldShowUI = true;
+                            targetText = "x" + nextMult.ToString("F2");
+                            if (nextMult > curMult) targetColor = new Color(1f, 0.4f, 0.4f);
+                            else if (nextMult < curMult) targetColor = new Color(0.4f, 0.8f, 1f);
+                        }
+                    }
+                    
+                    if (!shouldShowUI && adata.game_time <= lastChangeEndTime + 1.0f)
+                    {
+                        shouldShowUI = true;
+                    }
+                }
+
+                if (speedChangesUI != null)
+                {
+                    if (shouldShowUI)
+                    {
+                        if (!speedChangesUI.activeSelf) speedChangesUI.SetActive(true);
+                        if (fromText != null) fromText.text = "x" + curMult.ToString("F4");
+                        if (toText != null && targetText != "")
+                        {
+                            toText.text = targetText;
+                            toText.color = targetColor;
+                        }
+                    }
+                    else
+                    {
+                        if (speedChangesUI.activeSelf) speedChangesUI.SetActive(false);
+                    }
+                }
+
                 ////Debug.LogWarning("speed=" + adata.speed);
                 if (changed < Changes.Count)
                 {
@@ -77,11 +166,15 @@ public class SpeedManager : MonoBehaviour
                         
                         if (t >= 0f && t <= 1f)
                         {
+                            if (!inFormula)
+                            {
+                                formulaStartMultiplier = adata.speed / adata.default_speed;
+                                inFormula = true;
+                            }
+
                             float factor = CubicBezier.Evaluate(t, x1, y1, x2, y2);
-                            //float currentMultiplier = Mathf.Lerp(adata.speed, targetMultiplier, factor);
-                            //Debug.Log("t=" + t + ", startTime=" + startTime + ", duration=" + duration + ", targetMultiplier=" + targetMultiplier + ", factor=" + factor + ", nowSpeed=" + adata.speed);
-                            adata.speed = adata.default_speed * factor;
-                            //Debug.Log("speed=" + adata.speed + ", t=" + t);
+                            float currentMultiplier = Mathf.Lerp(formulaStartMultiplier, targetMultiplier, factor);
+                            adata.speed = adata.default_speed * currentMultiplier;
 
                             JObject payload = new JObject();
                             payload["event"] = "formula_update";
@@ -104,6 +197,8 @@ public class SpeedManager : MonoBehaviour
                         {
                             adata.speed = adata.default_speed * targetMultiplier;
                             changed++;
+                            inFormula = false;
+                            lastChangeEndTime = adata.game_time;
 
                             JObject payload = new JObject();
                             payload["event"] = "formula_end";
@@ -131,6 +226,7 @@ public class SpeedManager : MonoBehaviour
                         DebugSocketClient.Instance.SendData(root.ToString());
 
                         changed++;
+                        lastChangeEndTime = adata.game_time;
                     }
                 }
             }
@@ -138,6 +234,10 @@ public class SpeedManager : MonoBehaviour
         else
         {
             setupped = false;
+            if (speedChangesUI != null && speedChangesUI.activeSelf)
+            {
+                speedChangesUI.SetActive(false);
+            }
         }
         // ここまでスピード更新処理
     }

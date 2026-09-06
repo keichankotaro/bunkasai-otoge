@@ -13,15 +13,24 @@ public class ResultUI : MonoBehaviour
     [SerializeField] public GameObject PerfectText;
     [SerializeField] public GameObject GreatText;
     [SerializeField] public GameObject GoodText;
-    [SerializeField] public GameObject BadText;
+    //[SerializeField] public GameObject BadText;
     [SerializeField] public GameObject MissText;
+    [SerializeField] public GameObject LateText;
+    [SerializeField] public GameObject FastText;
     [SerializeField] public GameObject RankText;
     [SerializeField] public GameObject MusicText;
     [SerializeField] public GameObject LevelText;
+    [SerializeField] public GameObject DifficultyText;
+    [SerializeField] public GameObject DifficultyBackGround;
+    [SerializeField] public GameObject BackGroundJacket;
+    [SerializeField] public GameObject ResText;
     [SerializeField] public GameObject ComposerText;
     [SerializeField] public GameObject Jacket;
 
     [Header("Counts Detail UI")]
+    public GameObject MaxComboText;
+    public GameObject NewRecordComponent;
+    public GameObject DiffText;
     public GameObject CountsPanel;
     public GameObject CountsDetailPanel;
     public UnityEngine.UI.Button GoCountsDetailButton;
@@ -36,8 +45,8 @@ public class ResultUI : MonoBehaviour
     public TextMeshProUGUI GreatLateText;
     public TextMeshProUGUI GoodFastText;
     public TextMeshProUGUI GoodLateText;
-    public TextMeshProUGUI BadFastText;
-    public TextMeshProUGUI BadLateText;
+    //public TextMeshProUGUI BadFastText;
+    //public TextMeshProUGUI BadLateText;
 
     // Fast/Late Counters
     public static int PerfectPlusFast, PerfectPlusLate;
@@ -124,25 +133,187 @@ public class ResultUI : MonoBehaviour
             if (GreatLateText != null) GreatLateText.text = "Late: " + GreatLate.ToString();
             if (GoodFastText != null) GoodFastText.text = "Fast: " + GoodFast.ToString();
             if (GoodLateText != null) GoodLateText.text = "Late: " + GoodLate.ToString();
-            if (BadFastText != null) BadFastText.text = "Fast: " + BadFast.ToString();
-            if (BadLateText != null) BadLateText.text = "Late: " + BadLate.ToString();
+            //if (BadFastText != null) BadFastText.text = "Fast: " + BadFast.ToString();
+            //if (BadLateText != null) BadLateText.text = "Late: " + BadLate.ToString();
             //PerfectPlusText.GetComponent<TextMeshProUGUI>().text = "Perfect+: " + PerfectPlus;
             PerfectText.GetComponent<TextMeshProUGUI>().text = "Perfect: " + (perfect + PerfectPlus);
             GreatText.GetComponent<TextMeshProUGUI>().text = "Great: " + Great;
             GoodText.GetComponent<TextMeshProUGUI>().text = "Good: " + good;
-            BadText.GetComponent<TextMeshProUGUI>().text = "Bad: " + bad;
+            //BadText.GetComponent<TextMeshProUGUI>().text = "Bad: " + bad;
             MissText.GetComponent<TextMeshProUGUI>().text = "Miss: " + miss;
-            Rank = adata.auto_play ? "Auto" : (score > 990000) ? "SSS+" : (score > 980000) ? "SSS" : (score > 950000) ? "SS" : (score > 900000) ? "S" : (score > 850000) ? "AAA" : (score > 800000) ? "AA" : (score > 750000) ? "A" : (score > 700000) ? "BBB" : (score > 650000) ? "BB" : (score > 600000) ? "B" : (score > 550000) ? "C" : "D";
+            FastText.GetComponent<TextMeshProUGUI>().text = "Fast: " + (PerfectFast + GreatFast + GoodFast);
+            LateText.GetComponent<TextMeshProUGUI>().text = "Late: " + (PerfectLate + GreatLate + GoodLate);
+            Rank = adata.auto_play ? "Auto" : (score > 990000) ? "SSS+" : (score > 980000) ? "SSS" : (score > 975000) ? "SS+" : (score > 950000) ? "SS" : (score > 925000) ? "S+" : (score > 900000) ? "S" : (score > 850000) ? "AAA" : (score > 800000) ? "AA" : (score > 750000) ? "A" : (score > 700000) ? "BBB" : (score > 650000) ? "BB" : (score > 600000) ? "B" : (score > 550000) ? "C" : "D";
             RankText.GetComponent<TextMeshProUGUI>().text = Rank;
             MusicText.GetComponent<TextMeshProUGUI>().text = music;
-            LevelText.GetComponent<TextMeshProUGUI>().text = level;
+            LevelText.GetComponent<TextMeshProUGUI>().text = "Lv. " + level;
+            DifficultyText.GetComponent<TextMeshProUGUI>().text = adata.Difficulty;
+            DifficultyBackGround.GetComponent<Image>().color = adata.Difficulty switch
+            {
+                "Another" => new Color32(178, 0, 24, 255),
+                "Master" => new Color32(217, 0, 255, 255),
+                "Hard" => new Color32(255, 160, 0, 255),
+                "Easy" => new Color32(0, 255, 54, 255),
+                _ => new Color32(255, 255, 255, 255),
+            };
             ComposerText.GetComponent<TextMeshProUGUI>().text = composer;
+            if (ScoreManeger.ratioscore >= 1000000)
+            {
+                // All Perfect+
+                var c_start = new Color32(255, 0, 250, 255);
+                var c_end = new Color32(0, 238, 255, 255);
+                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ResText.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                ResText.GetComponent<TextMeshProUGUI>().text = "ALL PERFECT+";
+            }
+            else if (ResultUI.PerfectPlus + ResultUI.Perfect >= ScoreManeger.notes)
+            {
+                // All Perfect
+                var c_start = new Color32(255, 0, 250, 255);
+                var c_end = new Color32(0, 238, 255, 255);
+                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ResText.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                ResText.GetComponent<TextMeshProUGUI>().text = "ALL PERFECT";
+            }
+            else
+            if (ScoreManeger.combo == ScoreManeger.notes)
+            {
+                // Full Combo
+                var c_start = new Color32(255, 208, 0, 255);
+                var c_end = new Color32(255, 254, 218, 255);
+                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ResText.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                ResText.GetComponent<TextMeshProUGUI>().text = "FULL COMBO";
+            }
+            else if (ScoreManeger.ratioscore >= 750000)
+            {
+                // Clear
+                var c = new Color32(255, 208, 0, 255);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                ResText.GetComponent<TextMeshProUGUI>().text = "CLEAR";
+                ResText.GetComponent<TextMeshProUGUI>().color = c;
+            }
+            else
+            {
+                // Failed
+                var c = new Color32(0, 0, 255, 255);
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                ResText.GetComponent<TextMeshProUGUI>().text = "FAILED...";
+                ResText.GetComponent<TextMeshProUGUI>().color = c;
+            }
+
+            if (Rank == "D")
+            {
+                var c = new Color32(255, 255, 255, 255);
+                RankText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                ScoreText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                RankText.GetComponent<TextMeshProUGUI>().color = c;
+                ScoreText.GetComponent<TextMeshProUGUI>().color = c;
+            }
+            else if (Rank == "C")
+            {
+                var c = new Color32(0, 255, 0, 255);
+                RankText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                ScoreText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                RankText.GetComponent<TextMeshProUGUI>().color = c;
+                ScoreText.GetComponent<TextMeshProUGUI>().color = c;
+            }
+            else if (Rank == "B" || Rank == "BB" || Rank == "BBB")
+            {
+                var c = new Color32(0, 0, 255, 255);
+                RankText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                ScoreText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                RankText.GetComponent<TextMeshProUGUI>().color = c;
+                ScoreText.GetComponent<TextMeshProUGUI>().color = c;
+            }
+            else if (Rank == "A" || Rank == "AA" || Rank == "AAA")
+            {
+                var c_start = new Color32(255, 208, 0, 255);
+                var c_end = new Color32(255, 254, 218, 255);
+                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                RankText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ScoreText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ResText.GetComponent <TextMeshProUGUI>().enableVertexGradient = true;
+                RankText.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                ScoreText.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                ResText.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                RankText.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+                ScoreText.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+                ResText.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+            }
+            else if (Rank == "S" || Rank == "S+" || Rank == "SS" || Rank == "SS+" || Rank == "SSS" || Rank == "SSS+")
+            {
+                var c_start = new Color32(255, 0, 250, 255);
+                var c_end = new Color32(0, 238, 255, 255);
+                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                RankText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ScoreText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                ResText.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                RankText.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                ScoreText.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                ResText.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                RankText.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+                ScoreText.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+                ResText.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+            }
+            else if (Rank == "Auto")
+            {
+                var c = new Color32(255, 255, 255, 255);
+                RankText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                ScoreText.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+            }
+            
             Jacket.GetComponent<Image>().sprite = jacket;
+            BackGroundJacket.GetComponent<Image>().sprite = jacket;
 
             // Upload result if logged in and not in autoplay
             if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn() && !adata.auto_play)
             {
                 StartCoroutine(APIManager.Instance.UploadResult(music, adata.Difficulty, score));
+                
+                int oldHighScore = APIManager.Instance.GetHighScore(music, adata.Difficulty);
+                int diff = score - oldHighScore;
+
+                // ハイスコア（更新）の場合
+                if (diff > 0 || oldHighScore == 0)
+                {
+                    if (NewRecordComponent != null) NewRecordComponent.SetActive(true);
+                    
+                    TextMeshProUGUI diffText = null;
+                    if (NewRecordComponent != null)
+                    {
+                        Transform diffTransform = NewRecordComponent.transform.Find("Diff");
+                        if (diffTransform != null) diffText = diffTransform.GetComponent<TextMeshProUGUI>();
+                    }
+
+                    if (diffText != null)
+                    {
+                        /*
+                        if (oldHighScore > 0)
+                        {
+                            diffText.text = "+" + diff.ToString("N0");
+                        }
+                        else
+                        {
+                            diffText.text = "+" + diff.ToString("N0"); // 初プレイ時
+                        }
+                        */
+                        diffText.text = "High Score " + score.ToString() + " +" + diff.ToString("N0");
+                    }
+                }
+                else
+                {
+                    // ハイスコアではない場合は非表示
+                    if (NewRecordComponent != null) NewRecordComponent.SetActive(false);
+                }
+            }
+            else
+            {
+                // ログインしていない、またはオートプレイの場合は非表示
+                if (NewRecordComponent != null) NewRecordComponent.SetActive(false);
             }
 
             // Update result display flags
@@ -160,6 +331,11 @@ public class ResultUI : MonoBehaviour
                 // Reset when leaving the result screen
                 Result.GetComponent<CanvasGroup>().alpha = 0;
                 Result.GetComponent<Canvas>().sortingOrder = -1;
+                
+                if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn())
+                {
+                    StartCoroutine(APIManager.Instance.FetchHighScores());
+                }
                 ScoreManeger.combo = 0;
                 ScoreManeger.score = 0;
                 ScoreManeger.ratioscore = 0;

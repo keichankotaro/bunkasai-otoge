@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 750757009838713408}
   - component: {fileID: 2457920168760301493}
   - component: {fileID: 3016572913273675325}
-  - component: {fileID: -5574244435239420175}
   - component: {fileID: 3530403047928758012}
   m_Layer: 0
   m_Name: Long L1
@@ -64,7 +63,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9f06f1a2d2e56304d9d6534f49a3694c, type: 2}
+  - {fileID: 2100000, guid: 6505022483b94d842887bf2a7171bfb5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -99,28 +98,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   laneIndex: 1
---- !u!114 &-5574244435239420175
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6888469835007233505}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dfbe0a32c8168f418be30b6a628014b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  data: []
-  arrsec: 0
-  arrframe: 0
-  speed: 0
-  aid: 0
-  json: 
-  loadjson: 
-  game_time: 0
-  time_reming: 0
-  now: 0
 --- !u!65 &3530403047928758012
 BoxCollider:
   m_ObjectHideFlags: 0

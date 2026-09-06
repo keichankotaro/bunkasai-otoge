@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections;
@@ -80,6 +80,17 @@ public class UI : MonoBehaviour
     public GameObject downloadLog;
     public TMP_FontAsset logFont; // ログ用のフォントアセット
 
+    public GameObject loginButton;
+    public GameObject accountText;
+    public GameObject loginUI;
+    public GameObject userField;
+    public GameObject passwordField;
+    public GameObject submitButton;
+    public GameObject errorText;
+
+    private bool lastLevelSelectorOpen = false;
+    private Coroutine fadeLevelSelectorCoroutine = null;
+
     private string settingsFilePath;
     private static bool checksumManagerInitialized = false;
 
@@ -108,10 +119,54 @@ public class UI : MonoBehaviour
         settingsFilePath = Path.Combine(Application.persistentDataPath, "settings.json");
     }
 
+    private void OnEnable()
+    {
+        // Try subscribing here in case it's re-enabled later
+        if (APIManager.Instance != null)
+        {
+            APIManager.Instance.OnHighScoresUpdated -= UpdateMusicHighScores;
+            APIManager.Instance.OnHighScoresUpdated += UpdateMusicHighScores;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (APIManager.Instance != null)
+        {
+            APIManager.Instance.OnHighScoresUpdated -= UpdateMusicHighScores;
+        }
+    }
+
     private void Start()
     {
+        if (APIManager.Instance != null)
+        {
+            APIManager.Instance.OnHighScoresUpdated -= UpdateMusicHighScores;
+            APIManager.Instance.OnHighScoresUpdated += UpdateMusicHighScores;
+        }
+
         Debug.Log("UI Start");
         Anim = LevelSelector.GetComponent<Animator>();
+        
+        if (passwordField != null)
+        {
+            var tmpInput = passwordField.GetComponent<TMP_InputField>();
+            if (tmpInput != null)
+            {
+                tmpInput.inputType = TMP_InputField.InputType.Password;
+            }
+        }
+        
+        if (LevelSelector != null)
+        {
+            CanvasGroup cg = LevelSelector.GetComponent<CanvasGroup>();
+            if (cg == null) cg = LevelSelector.AddComponent<CanvasGroup>();
+            cg.alpha = 0f;
+            cg.interactable = false;
+            cg.blocksRaycasts = false;
+            lastLevelSelectorOpen = false;
+        }
+
         SortBy.onValueChanged.AddListener(delegate { OnSortChanged(); });
         OrderBy.onValueChanged.AddListener(delegate { OnSortChanged(); });
         Genre.onValueChanged.AddListener(delegate { OnSortChanged(); });
@@ -145,6 +200,120 @@ public class UI : MonoBehaviour
         });
 
         reDownload.onClick.AddListener(() => StartCoroutine(DownloadAll()));
+
+        if (loginButton != null)
+        {
+            loginButton.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(OnLoginButtonClicked);
+        }
+        if (submitButton != null)
+        {
+            submitButton.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(OnSubmitButtonClicked);
+        }
+
+        if (APIManager.Instance != null)
+        {
+            if (APIManager.Instance.IsLoggedIn())
+            {
+                UpdateLoginStateUI(true, "Loading...");
+                StartCoroutine(APIManager.Instance.GetMyInfo((success, result) => {
+                    if (success) {
+                        UpdateLoginStateUI(true, result);
+                        StartCoroutine(APIManager.Instance.FetchHighScores());
+                    } else {
+                        Debug.LogWarning("GetMyInfo failed on start: " + result);
+                        UpdateLoginStateUI(true, "Name Load Error");
+                    }
+                }));
+            }
+            else
+            {
+                UpdateLoginStateUI(false, "");
+            }
+        }
+    }
+
+    private void UpdateLoginStateUI(bool isLoggedIn, string playerName = "")
+    {
+        if (loginButton != null)
+        {
+            var btnText = loginButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (btnText != null) btnText.text = isLoggedIn ? "ログアウト" : "ログイン";
+        }
+
+        if (accountText != null)
+        {
+            accountText.GetComponent<TextMeshProUGUI>().text = isLoggedIn ? playerName : "未ログイン";
+        }
+    }
+
+    public void UpdateMusicHighScores()
+    {
+        if (MusicObj == null || MusicObj.Count == 0) return;
+        
+        for (int i = 0; i < MusicObj.Count; i++)
+        {
+            var setText = MusicObj[i].GetComponent<SetText>();
+            if (setText != null)
+            {
+                setText.UpdateHighScoreText();
+            }
+        }
+    }
+
+    private void OnLoginButtonClicked()
+    {
+        if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn())
+        {
+            // Logout
+            APIManager.Instance.Logout();
+            UpdateLoginStateUI(false, "");
+            UpdateMusicHighScores();
+        }
+        else
+        {
+            if (loginUI != null)
+            {
+                loginUI.SetActive(!loginUI.activeSelf);
+            }
+        }
+    }
+
+    private void OnSubmitButtonClicked()
+    {
+        if (userField == null || passwordField == null || APIManager.Instance == null) return;
+        
+        string username = userField.GetComponent<TMP_InputField>().text;
+        string password = passwordField.GetComponent<TMP_InputField>().text;
+
+        if (errorText != null)
+        {
+            errorText.GetComponent<TextMeshProUGUI>().text = "Logging in...";
+        }
+
+        StartCoroutine(APIManager.Instance.Login(username, password, (success, result) => {
+            if (success)
+            {
+                if (errorText != null) errorText.GetComponent<TextMeshProUGUI>().text = "Success!";
+                if (loginUI != null) loginUI.SetActive(false);
+                
+                // Fetch player name
+                UpdateLoginStateUI(true, "Loading...");
+                StartCoroutine(APIManager.Instance.GetMyInfo((infoSuccess, infoResult) => {
+                    if (infoSuccess) {
+                        UpdateLoginStateUI(true, infoResult);
+                        // Fetch high scores immediately after successful login
+                        StartCoroutine(APIManager.Instance.FetchHighScores());
+                    } else {
+                        Debug.LogWarning("GetMyInfo failed after login: " + infoResult);
+                        UpdateLoginStateUI(true, "Name Load Error");
+                    }
+                }));
+            }
+            else
+            {
+                if (errorText != null) errorText.GetComponent<TextMeshProUGUI>().text = result;
+            }
+        }));
     }
 
     /// <summary>
@@ -296,8 +465,21 @@ public class UI : MonoBehaviour
     private IEnumerator SetupProcessCoroutine()
     {
         NowPage = 0;
+
+        // リザルトから戻った場合、最後にプレイした曲をハイライトする
+        // adata.chart は "Difficulty/曲名" の形式で保持されている
+        if (!string.IsNullOrEmpty(adata.chart) && adata.chart.Contains("/"))
+        {
+            string lastPlayedMusic = adata.chart.Split('/')[1];
+            int lastPlayedIndex = Musics.IndexOf(lastPlayedMusic);
+            if (lastPlayedIndex >= 0)
+            {
+                NowPage = lastPlayedIndex;
+            }
+        }
+
         LevelExists = (httpJsonObj["diffs"] as JArray).ToObject<List<List<bool>>>();
-        PageNo.GetComponent<TextMeshProUGUI>().text = $"1/{Musics.Count}";
+        PageNo.GetComponent<TextMeshProUGUI>().text = $"{NowPage + 1}/{Musics.Count}";
         UpdateLevelTexts();
 
         for (int i = 0; i < Musics.Count; i++)
@@ -305,7 +487,7 @@ public class UI : MonoBehaviour
             MusicObj.Add(Instantiate(MusicPrefab));
             MusicObj[i].transform.parent = canvas.transform;
             Vector3 pos = MusicObj[i].transform.position;
-            pos.x = 0.0f + 500.0f * i;
+            pos.x = 500.0f * (i - NowPage);
             pos.y = 0.0f;
             pos.z = 0.0f;
             MusicObj[i].transform.position = pos;
@@ -344,6 +526,7 @@ public class UI : MonoBehaviour
 
         SetupLoading.SetActive(false);
         Moved = MusicObj.Count;
+        UpdateMusicHighScores();
 
         if (Musics.Count > 0)
         {
@@ -361,7 +544,7 @@ public class UI : MonoBehaviour
         EasyText.GetComponent<TextMeshProUGUI>().text = httpJsonObj["levels"][NowPage][3] + "";
     }
 
-    private void MoveMusicSelection(int direction)
+    private void MoveMusicSelection(int direction, bool animate = true)
     {
         if (MusicObj == null || MusicObj.Count == 0) return;
 
@@ -371,7 +554,15 @@ public class UI : MonoBehaviour
             Moved = 0;
             for (int i = 0; i < MusicObj.Count; i++)
             {
-                StartCoroutine(MoveMusic(MusicObj[i], direction, 0.05f));
+                if (animate)
+                {
+                    StartCoroutine(MoveMusic(MusicObj[i], direction, 0.05f));
+                }
+                else
+                {
+                    MusicObj[i].transform.position = new Vector3(MusicObj[i].transform.position.x - 500f * direction, MusicObj[i].transform.position.y, MusicObj[i].transform.position.z);
+                    Moved++;
+                }
             }
 
             PageNo.GetComponent<TextMeshProUGUI>().text = $"{NowPage + 1}/{MusicObj.Count}";
@@ -382,19 +573,19 @@ public class UI : MonoBehaviour
         }
     }
 
-    private void ProcessMove(int direction)
+    private void ProcessMove(int direction, bool animate = true)
     {
         if (MusicObj == null || MusicObj.Count == 0) return;
 
         if (direction == 1)
         {
-            if (NowPage == MusicObj.Count - 1) MoveMusicSelection(-NowPage);
-            else MoveMusicSelection(1);
+            if (NowPage == MusicObj.Count - 1) MoveMusicSelection(-NowPage, animate);
+            else MoveMusicSelection(1, animate);
         }
         else if (direction == -1)
         {
-            if (NowPage == 0) MoveMusicSelection(MusicObj.Count - 1);
-            else MoveMusicSelection(-1);
+            if (NowPage == 0) MoveMusicSelection(MusicObj.Count - 1, animate);
+            else MoveMusicSelection(-1, animate);
         }
     }
 
@@ -871,8 +1062,52 @@ public class UI : MonoBehaviour
         }
     }
 
+    private IEnumerator FadeLevelSelector(bool open)
+    {
+        CanvasGroup cg = LevelSelector.GetComponent<CanvasGroup>();
+        if (cg == null) cg = LevelSelector.AddComponent<CanvasGroup>();
+
+        if (open)
+        {
+            cg.interactable = true;
+            cg.blocksRaycasts = true;
+            float t = 0;
+            while (t < 0.2f)
+            {
+                t += Time.deltaTime;
+                cg.alpha = t / 0.2f;
+                yield return null;
+            }
+            cg.alpha = 1f;
+        }
+        else
+        {
+            float t = 0;
+            while (t < 0.2f)
+            {
+                t += Time.deltaTime;
+                cg.alpha = 1f - (t / 0.2f);
+                yield return null;
+            }
+            cg.alpha = 0f;
+            cg.interactable = false;
+            cg.blocksRaycasts = false;
+        }
+    }
+
     void Update()
     {
+        if (LevelSelector != null && Anim != null)
+        {
+            bool isOpen = Anim.GetBool("bOpen");
+            if (isOpen != lastLevelSelectorOpen)
+            {
+                lastLevelSelectorOpen = isOpen;
+                if (fadeLevelSelectorCoroutine != null) StopCoroutine(fadeLevelSelectorCoroutine);
+                fadeLevelSelectorCoroutine = StartCoroutine(FadeLevelSelector(isOpen));
+            }
+        }
+
         if (!adata.ready_to_start && adata.Activated)
         {
             last_tap += Time.deltaTime;
@@ -928,12 +1163,12 @@ public class UI : MonoBehaviour
                     TempClickTime += Time.deltaTime;
                     LastMove += Time.deltaTime;
 
-                    const float longPressStartThreshold = 0.5f;
-                    const float longPressInterval = 0.1f;
+                    const float longPressStartThreshold = 0.4f;
+                    const float longPressInterval = 0.05f;
                     if (TempClickTime > longPressStartThreshold && LastMove > longPressInterval)
                     {
                         LastMove = 0f;
-                        ProcessMove(currentDirection);
+                        ProcessMove(currentDirection, false); // 長押し時はアニメーションなし
                     }
                 }
                 else
