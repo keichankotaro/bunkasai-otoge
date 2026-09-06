@@ -252,10 +252,10 @@ public class ShowDetails : MonoBehaviour
 
                 if (fileData != null)
                 {
-                    Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                    Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                     if (texture.LoadImage(fileData))
                     {
-                        texture.filterMode = FilterMode.Trilinear;
+                        texture.filterMode = FilterMode.Bilinear;
                         texture.Apply();
                         jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
                         if (Jacket != null) Jacket.GetComponent<Image>().sprite = jacket;
@@ -285,10 +285,10 @@ public class ShowDetails : MonoBehaviour
                         string savePath = Path.Combine(jacketCachePath, adata.GetSafeFileName(Music) + ".jpg");
                         File.WriteAllBytes(savePath, jacketResponse.RawBytes);
 
-                        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                         if (texture.LoadImage(jacketResponse.RawBytes))
                         {
-                            texture.filterMode = FilterMode.Trilinear;
+                            texture.filterMode = FilterMode.Bilinear;
                             texture.Apply();
                             jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
                             if (Jacket != null) Jacket.GetComponent<Image>().sprite = jacket;

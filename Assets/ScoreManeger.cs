@@ -12,6 +12,12 @@ public class ScoreManeger : MonoBehaviour
 {
     [SerializeField] GameObject score_t;
     [SerializeField] GameObject combo_t;
+    [SerializeField] GameObject perfect_t;
+    [SerializeField] GameObject great_t;
+    [SerializeField] GameObject good_t;
+    [SerializeField] GameObject miss_t;
+    [SerializeField] GameObject fast_t;
+    [SerializeField] GameObject late_t;
     // スコア
     public static int score = 0;
     // コンボ数
@@ -113,14 +119,23 @@ public class ScoreManeger : MonoBehaviour
 
                 if (adata.auto_play)
                 {
-                    score_t.GetComponent<TextMeshProUGUI>().text = "Auto " + s;
-                    combo_t.GetComponent<TextMeshProUGUI>().text = "Auto " + combo;
+                    //score_t.GetComponent<TextMeshProUGUI>().text = "Auto " + s;
+                    //combo_t.GetComponent<TextMeshProUGUI>().text = "Auto " + combo;
+                    score_t.GetComponent<TextMeshProUGUI>().text = "Auto";
+                    combo_t.GetComponent<TextMeshProUGUI>().text = "Auto";
                 }
                 else
                 {
                     score_t.GetComponent<TextMeshProUGUI>().text = s;
                     combo_t.GetComponent<TextMeshProUGUI>().text = combo + "";
                 }
+
+                perfect_t.GetComponent<TextMeshProUGUI>().text = "Perfect: " + (ResultUI.PerfectPlus + ResultUI.Perfect);
+                great_t.GetComponent<TextMeshProUGUI>().text = "Great: " + ResultUI.Great;
+                good_t.GetComponent<TextMeshProUGUI>().text = "Good: " + ResultUI.Good;
+                miss_t.GetComponent<TextMeshProUGUI>().text = "Miss: " + ResultUI.Miss;
+                fast_t.GetComponent<TextMeshProUGUI>().text = "Fast: " + (ResultUI.PerfectFast + ResultUI.GreatFast + ResultUI.GoodFast);
+                late_t.GetComponent<TextMeshProUGUI>().text = "Late: " + (ResultUI.PerfectLate + ResultUI.GreatLate + ResultUI.GoodLate);
 
                 if (DebugText.isDebugMode)
                 {

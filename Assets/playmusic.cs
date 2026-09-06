@@ -4,7 +4,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.IO;
+using System.Security.Cryptography;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -41,6 +43,9 @@ public class PlayMusic : MonoBehaviour
     public Slider ProgressBar;
     public Animator Anim;
     public Image ProgressBarFill;
+    public GameObject LevelBackGround;
+
+    private string diff;
 
     // �Đ��Ǘ��p�̃t���O
     public static bool audioFinished = false;
@@ -129,6 +134,24 @@ public class PlayMusic : MonoBehaviour
                     offset = float.Parse(jsonObj["maindata"]["offset"] + "");
                     bgTransform = BackGround.transform;
                     bgPos = bgTransform.position;
+                    diff = (adata.chart).Split("/")[0];
+                    if (diff == "Another")
+                    {
+                        LevelBackGround.GetComponent<Image>().color = new Color32(178, 0, 24, 255);
+                    }
+                    else if (diff == "Master")
+                    {
+                        LevelBackGround.GetComponent<Image>().color = new Color32(217, 0, 255, 255);
+                    }
+                    else if (diff == "Hard")
+                    {
+                        LevelBackGround.GetComponent<Image>().color = new Color32(255, 160, 0, 255);
+                    }
+                    else if (diff == "Easy")
+                    {
+                        LevelBackGround.GetComponent<Image>().color = new Color32(0, 255, 54, 255);
+                    }
+                    
 
                     if (videoExists)
                     {
@@ -155,9 +178,62 @@ public class PlayMusic : MonoBehaviour
                         }
                         bgPos.y = -3.89f;
                         videoPlayer.Play();
+                        
+                        // 静止画キャンバスがあれば非表示にする
+                        GameObject canvasObj = GameObject.Find("JacketBackgroundCanvas");
+                        if (canvasObj != null) canvasObj.SetActive(false);
                     }
                     else
                     {
+                        videoPlayer = Plane.GetComponent<VideoPlayer>();
+                        if (videoPlayer != null) videoPlayer.Stop();
+                        MeshRenderer mesh = Plane.GetComponent<MeshRenderer>();
+                        if (mesh != null) mesh.enabled = false;
+                        
+                        // 動画がない場合は、ジャケットを背景としてカメラの最奥に直接描画する
+                        GameObject canvasObj = GameObject.Find("JacketBackgroundCanvas");
+                        if (canvasObj == null)
+                        {
+                            canvasObj = new GameObject("JacketBackgroundCanvas");
+                            Canvas canvas = canvasObj.AddComponent<Canvas>();
+                            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                            canvas.worldCamera = Camera.main;
+                            canvas.planeDistance = Camera.main.farClipPlane - 1f;
+                            canvas.sortingOrder = -32768; // 確実に最背面になるように設定
+
+                            GameObject imageObj = new GameObject("JacketImage");
+                            imageObj.transform.SetParent(canvasObj.transform, false);
+                            Image image = imageObj.AddComponent<Image>();
+                            image.sprite = ShowDetails.jacket;
+                            
+                            // FitOutside (画面全体にフィット) を再現
+                            AspectRatioFitter fitter = imageObj.AddComponent<AspectRatioFitter>();
+                            fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+                            if (ShowDetails.jacket != null && ShowDetails.jacket.texture != null)
+                            {
+                                fitter.aspectRatio = (float)ShowDetails.jacket.texture.width / ShowDetails.jacket.texture.height;
+                            }
+
+                            RectTransform rect = image.GetComponent<RectTransform>();
+                            rect.anchorMin = Vector2.zero;
+                            rect.anchorMax = Vector2.one;
+                            rect.sizeDelta = Vector2.zero;
+                        }
+                        else
+                        {
+                            canvasObj.SetActive(true);
+                            Image image = canvasObj.GetComponentInChildren<Image>();
+                            if (image != null && ShowDetails.jacket != null)
+                            {
+                                image.sprite = ShowDetails.jacket;
+                                AspectRatioFitter fitter = image.GetComponent<AspectRatioFitter>();
+                                if (fitter != null && ShowDetails.jacket.texture != null)
+                                {
+                                    fitter.aspectRatio = (float)ShowDetails.jacket.texture.width / ShowDetails.jacket.texture.height;
+                                }
+                            }
+                        }
+
                         bgPos.y = -3.87f;
                     }
 
@@ -317,6 +393,9 @@ public class PlayMusic : MonoBehaviour
                             videoPlayer.Stop();
                             videoPlayer.url = ""; // ファイルのロックを解除する
                         }
+                        GameObject canvasObj = GameObject.Find("JacketBackgroundCanvas");
+                        if (canvasObj != null) canvasObj.SetActive(false);
+                        
                         bgPos.y = -3.87f;
                         bgTransform.position = bgPos;
                         Anim.SetBool("bOpen", false);

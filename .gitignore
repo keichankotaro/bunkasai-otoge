@@ -79,6 +79,7 @@ crashlytics-build.properties
 # 音声類
 *.wav
 /[Aa]ssets/[Rr]esources/[Mm]usics/*
+/[Aa]ssets/[Rr]esources/[Mm]usics.meta
 /[Aa]ssets/StreamingAssets/*.acf
 /[Aa]ssets/StreamingAssets/*.acb
 
@@ -89,6 +90,8 @@ crashlytics-build.properties
 /[Aa]ssets/NuGet
 /[Aa]ssets/[Rr]esources/Jackets/*
 /[Aa]ssets/[Rr]esources/Deleted Jackets/*
+/[Aa]ssets/[Rr]esources/Jackets.meta
+/[Aa]ssets/[Rr]esources/Deleted Jackets.meta
 /[Aa]ssets/CriData
 /[Aa]ssets/CRIMW
 /[Aa]ssets/[Pp]ackages/*
@@ -96,12 +99,22 @@ crashlytics-build.properties
 /[Aa]ssets/[Ii]mages/*[Aa][Dd][Xx][Ll][Ee]*
 
 # リソース
-/[Aa]ssets/[Rr]esources/
+#/[Aa]ssets/[Rr]esources/
+/[Aa]ssets/[Rr]esources/BGM/*
+/[Aa]ssets/[Rr]esources/Deleted Charts/*
+/[Aa]ssets/[Rr]esources/Plugins/*
+/[Aa]ssets/[Rr]esources/Charts/*
+/[Aa]ssets/[Rr]esources/BGM.meta
+/[Aa]ssets/[Rr]esources/Deleted Charts.meta
+/[Aa]ssets/[Rr]esources/Plugins.meta
+/[Aa]ssets/[Rr]esources/Charts.meta
 /dl/
 
 # バックアップ(アーカイブ)類
 *.rar
 *.zip
 *.html
+*.mp4
+*.mp4.meta
 
 agy-code.txt
