@@ -523,7 +523,7 @@ public class UI : MonoBehaviour
             MusicObj[i].transform.parent = canvas.transform;
             Vector3 pos = MusicObj[i].transform.position;
             pos.x = 500.0f * (i - NowPage);
-            pos.y = 0.0f;
+            pos.y = -40.0f;
             pos.z = 0.0f;
             MusicObj[i].transform.position = pos;
             MusicObj[i].name = (string)Musics[i];
