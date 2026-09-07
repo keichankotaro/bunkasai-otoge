@@ -28,6 +28,10 @@ public class SpeedManager : MonoBehaviour
     private float lastChangeEndTime = -999f;
     private bool enableSoflanPreview = false;
 
+    // デバッグJSON送信のフレームカウンター（毎フレーム送信を回避）
+    private int debugSendCounter = 0;
+    private const int DEBUG_SEND_INTERVAL = 10; // 10フレームに1回送信
+
     // Start is called before the first frame update
     private void Setup()
     {
@@ -176,22 +180,26 @@ public class SpeedManager : MonoBehaviour
                             float currentMultiplier = Mathf.Lerp(formulaStartMultiplier, targetMultiplier, factor);
                             adata.speed = adata.default_speed * currentMultiplier;
 
-                            JObject payload = new JObject();
-                            payload["event"] = "formula_update";
-                            payload["new_speed"] = adata.speed;
-                            payload["t"] = t;
-                            payload["factor"] = factor;
-                            payload["start_time"] = startTime;
-                            payload["duration"] = duration;
-                            payload["target_multiplier"] = targetMultiplier;
-                            payload["x1"] = x1;
-                            payload["y1"] = y1;
-                            payload["x2"] = x2;
-                            payload["y2"] = y2;
-                            JObject root = new JObject();
-                            root["source"] = "SpeedManager";
-                            root["payload"] = payload;
-                            DebugSocketClient.Instance.SendData(root.ToString());
+                            // デバッグ送信を間引き（毎フレーム→10フレームに1回）
+                            if (DebugText.isDebugMode && ++debugSendCounter % DEBUG_SEND_INTERVAL == 0)
+                            {
+                                JObject payload = new JObject();
+                                payload["event"] = "formula_update";
+                                payload["new_speed"] = adata.speed;
+                                payload["t"] = t;
+                                payload["factor"] = factor;
+                                payload["start_time"] = startTime;
+                                payload["duration"] = duration;
+                                payload["target_multiplier"] = targetMultiplier;
+                                payload["x1"] = x1;
+                                payload["y1"] = y1;
+                                payload["x2"] = x2;
+                                payload["y2"] = y2;
+                                JObject root = new JObject();
+                                root["source"] = "SpeedManager";
+                                root["payload"] = payload;
+                                DebugSocketClient.Instance.SendData(root.ToString());
+                            }
                         }
                         if (t > 1f)
                         {
