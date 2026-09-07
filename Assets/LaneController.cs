@@ -53,6 +53,10 @@ public class LaneController : MonoBehaviour
     // Cached data reference
     private Dictionary<int, adata.NoteInfo> currentLaneNotes;
 
+    // キャッシュ済みコンポーネント（毎フレームGetComponent回避）
+    private MeshRenderer cachedMeshRenderer;
+    private Camera cachedMainCamera;
+
     // Helper to access static anti-ghosting variables
     private int LastJudgedFrame
     {
@@ -79,8 +83,13 @@ public class LaneController : MonoBehaviour
         }
     }
 
+    // 静的ノーツ存在管理（GameObject.Find()回避でO(n)→O(1)に）
+    public static Dictionary<string, LaneController> ActiveNotes = new Dictionary<string, LaneController>();
+
     void Start()
     {
+        cachedMeshRenderer = GetComponent<MeshRenderer>();
+        cachedMainCamera = Camera.main;
         InitializeLaneData();
         Init_0();
         InitializeNote();
@@ -137,6 +146,9 @@ public class LaneController : MonoBehaviour
 
     private async Task RecycleOrDestroy()
     {
+        // ActiveNotesから現在の名前を解除
+        ActiveNotes.Remove(gameObject.name);
+
         transform.position = new Vector3(transform.position.x, transform.position.y, -40000f);
         EndTask = true; // Make sure task is ended before recycling
 
@@ -153,7 +165,7 @@ public class LaneController : MonoBehaviour
             {
                 string nextNoteType = nextNote.type;
                 name = $"{laneJsonId}_{(nextNoteType == "long" ? "long_" : "")}{newId}";
-                this.GetComponent<MeshRenderer>().sharedMaterial = (nextNoteType == "long" ? longNoteMaterial : noteMaterial);
+                cachedMeshRenderer.sharedMaterial = (nextNoteType == "long" ? longNoteMaterial : noteMaterial);
                 await InitializeNote();
             }
             else
@@ -231,7 +243,7 @@ public class LaneController : MonoBehaviour
                 //GetComponent<Renderer>().material.color = new Color32(90, 255, 96, 255);
                 //GetComponent<Renderer>().material.color = new Color32(255, 255, 255, 255);
                 this.transform.localScale = new Vector3(0.7f, 0.01f, length);
-                this.GetComponent<MeshRenderer>().sharedMaterial = longNoteMaterial;
+                cachedMeshRenderer.sharedMaterial = longNoteMaterial;
                 isLongNoteActive = true;
             }
             else // tap
@@ -240,7 +252,7 @@ public class LaneController : MonoBehaviour
                 //GetComponent<Renderer>().material.color = new Color32(0, 255, 232, 255);
                 //GetComponent<Renderer>().material.color = new Color32(255, 255, 255, 255);
                 transform.localScale = new Vector3(0.7f, 0.01f, 0.1f);
-                this.GetComponent<MeshRenderer>().sharedMaterial = noteMaterial;
+                cachedMeshRenderer.sharedMaterial = noteMaterial;
             }
         }
         else
@@ -255,6 +267,9 @@ public class LaneController : MonoBehaviour
         EndTask = false;
         debugDataSent = false;
         isPreviousObjectDestroyed = false; // Reset this flag
+
+        // ActiveNotesに登録（GameObject.Find()の代替）
+        ActiveNotes[gameObject.name] = this;
 
         return Task.CompletedTask;
     }
@@ -396,7 +411,8 @@ public class LaneController : MonoBehaviour
             
             // ここからスピード・位置更新
             game_time = adata.game_time;
-            float originalSpeed = (float)cd["speed"] * (adata.speed * 10.0f);
+            // Fix #7: キャッシュ済みの値を使用（JToken参照を毎フレーム回避）
+            float originalSpeed = currentNoteInfo.speed * (adata.speed * 10.0f);
             speed = originalSpeed;
 
             if (s_change && change != null && change_count < change.Count)
@@ -406,7 +422,7 @@ public class LaneController : MonoBehaviour
 
             if (type == "long")
             {
-                endsec = (float)cd["endtime"];
+                endsec = currentNoteInfo.endtime;
                 float effectiveArrsec = long_click ? Mathf.Min(game_time, endsec) : arrsec;
                 length = (originalSpeed * (endsec - effectiveArrsec)) / 2;
                 transform.localScale = new Vector3(0.7f, 0.01f, length);
@@ -424,8 +440,8 @@ public class LaneController : MonoBehaviour
                  if (id > 0)
                  {
                     string prev_id = (id - 1).ToString();
-                    // This check is inefficient. For better performance, use an event-based system.
-                    if (GameObject.Find($"{laneJsonId}_{prev_id}") == null && GameObject.Find($"{laneJsonId}_long_{prev_id}") == null)
+                    // Fix #1: GameObject.Find() → ActiveNotes.ContainsKey() でO(n)→O(1)に
+                    if (!ActiveNotes.ContainsKey($"{laneJsonId}_{prev_id}") && !ActiveNotes.ContainsKey($"{laneJsonId}_long_{prev_id}"))
                     {
                         isPreviousObjectDestroyed = true;
                     }
@@ -567,8 +583,14 @@ public class LaneController : MonoBehaviour
 
     private bool IsMouseOverLane()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Ray ray = cachedMainCamera.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
         return Physics.Raycast(ray, out hit) && hit.collider.gameObject.name == raycastTargetName;
+    }
+
+    private void OnDestroy()
+    {
+        // Destroy時にActiveNotesから確実に解除
+        ActiveNotes.Remove(gameObject.name);
     }
 }
