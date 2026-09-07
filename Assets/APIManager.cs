@@ -174,7 +174,7 @@ public class APIManager : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    public IEnumerator UploadResult(string songTitle, string difficulty, int score)
+    public IEnumerator UploadResult(string songTitle, string difficulty, int score, int pp, int p, int gr, int go, int m, int max)
     {
         if (!IsLoggedIn())
         {
@@ -186,6 +186,12 @@ public class APIManager : MonoBehaviour
         form.AddField("song_title", songTitle);
         form.AddField("difficulty", difficulty);
         form.AddField("score", score);
+        form.AddField("perfectplus", pp);
+        form.AddField("perfect", p);
+        form.AddField("great", gr);
+        form.AddField("good", go);
+        form.AddField("miss", m);
+        form.AddField("maxnotes", max);
 
         using (UnityWebRequest www = UnityWebRequest.Post(BaseUrl + "upload_result.cgi", form))
         {

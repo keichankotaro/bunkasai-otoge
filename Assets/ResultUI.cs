@@ -272,7 +272,7 @@ public class ResultUI : MonoBehaviour
             // Upload result if logged in and not in autoplay
             if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn() && !adata.auto_play)
             {
-                StartCoroutine(APIManager.Instance.UploadResult(music, adata.Difficulty, score));
+                StartCoroutine(APIManager.Instance.UploadResult(music, adata.Difficulty, score, PerfectPlus, perfect, Great, good, miss, (PerfectPlus+perfect+Great+good+miss)));
                 
                 int oldHighScore = APIManager.Instance.GetHighScore(music, adata.Difficulty);
                 int diff = score - oldHighScore;
