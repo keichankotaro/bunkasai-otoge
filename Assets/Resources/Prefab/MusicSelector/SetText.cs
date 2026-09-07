@@ -88,10 +88,15 @@ public class SetText : MonoBehaviour
 
         if (File.Exists(localImagePath))
         {
+            // 処理落ちを防ぐため数フレームに分散して画像をロードする
+            yield return null;
             byte[] fileData = File.ReadAllBytes(localImagePath);
+            
+            yield return null;
             Texture2D   texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             texture.LoadImage(fileData);
             ApplyTexture(texture);
+            
             adata.loaded++;
             yield break;
         }
@@ -108,12 +113,14 @@ public class SetText : MonoBehaviour
                 Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                 texture.LoadImage(imageData);
                 ApplyTexture(texture);
-                adata.loaded++;
             }
             else
             {
                 Debug.LogError($"[JacketCache] Failed to download jacket for {musicName}: {www.error}");
             }
+            
+            // 成功・失敗にかかわらずロード済みとしてカウントする（永遠にロードが終わらないバグを防止）
+            adata.loaded++;
         }
     }
 

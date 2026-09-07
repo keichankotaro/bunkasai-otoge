@@ -332,10 +332,6 @@ public class ResultUI : MonoBehaviour
                 Result.GetComponent<CanvasGroup>().alpha = 0;
                 Result.GetComponent<Canvas>().sortingOrder = -1;
                 
-                if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn())
-                {
-                    StartCoroutine(APIManager.Instance.FetchHighScores());
-                }
                 ScoreManeger.combo = 0;
                 ScoreManeger.score = 0;
                 ScoreManeger.ratioscore = 0;
@@ -360,9 +356,12 @@ public class ResultUI : MonoBehaviour
                 DebugText.ratioscore = "";
                 DebugText.score = "";
 
+                // ハイスコアキャッシュを無効化し、バックグラウンドで再取得
+                // （MusicSelectManager.Start()でも呼ばれるので、ここでは1回だけでOK）
                 if (APIManager.Instance != null)
                 {
                     APIManager.Instance.InvalidateHighScores();
+                    // UIをブロックせず、バックグラウンドで非同期取得
                     StartCoroutine(APIManager.Instance.FetchHighScores());
                 }
 

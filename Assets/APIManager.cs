@@ -83,6 +83,7 @@ public class APIManager : MonoBehaviour
     private Dictionary<string, int> _highScores = new Dictionary<string, int>();
     private Dictionary<string, int> _highScoresWithDiff = new Dictionary<string, int>();
     private bool _highScoresFetched = false;
+    private bool _isFetchingHighScores = false; // 二重取得防止フラグ
     public Action OnHighScoresUpdated;
 
     public int GetHighScore(string songTitle)
@@ -107,11 +108,13 @@ public class APIManager : MonoBehaviour
 
     public IEnumerator FetchHighScores(Action onComplete = null)
     {
-        if (!IsLoggedIn() || _highScoresFetched)
+        if (!IsLoggedIn() || _highScoresFetched || _isFetchingHighScores)
         {
             onComplete?.Invoke();
             yield break;
         }
+
+        _isFetchingHighScores = true;
 
         using (UnityWebRequest www = UnityWebRequest.Get(BaseUrl + "get_my_high_scores.cgi"))
         {
@@ -167,6 +170,7 @@ public class APIManager : MonoBehaviour
                 Debug.LogError("Error fetching high scores: " + www.error);
             }
         }
+        _isFetchingHighScores = false;
         onComplete?.Invoke();
     }
 

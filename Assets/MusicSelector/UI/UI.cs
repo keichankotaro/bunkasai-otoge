@@ -92,6 +92,11 @@ public class UI : MonoBehaviour
     private Coroutine fadeLevelSelectorCoroutine = null;
 
     private string settingsFilePath;
+
+    private static string lastFetchedSort = null;
+    private static string lastFetchedOrder = null;
+    private static string lastFetchedGenre = null;
+
     private static bool checksumManagerInitialized = false;
 
     void Awake()
@@ -423,12 +428,27 @@ public class UI : MonoBehaviour
         }
 
         // --- オンラインモードの処理 ---
-        Debug.Log("[Setup] Online mode: Fetching data from server.");
+        // 同じ条件で既に取得済みならキャッシュを使用（フリーズ回避）
+        if (httpJsonObj != null && lastFetchedSort == adata.sort && lastFetchedOrder == adata.order && lastFetchedGenre == adata.genre)
+        {
+            Debug.Log("[Setup] Online mode: Using cached data.");
+            Musics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
+            StartCoroutine(SetupProcessCoroutine());
+            return;
+        }
+
+        Debug.Log("[Setup] Online mode: Fetching data from server (Async).");
+        FetchOnlineDataAsync();
+    }
+
+    private async void FetchOnlineDataAsync()
+    {
         try
         {
             var client = new RestClient($"https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getMusicList/index.cgi?sort={adata.sort}&order={adata.order}&genre={adata.genre}");
             var request = new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) };
-            var response = client.Execute(request);
+            // 非同期で取得し、メインスレッドをブロックしない
+            var response = await client.ExecuteAsync(request);
 
             if (response.StatusCode != System.Net.HttpStatusCode.OK)
             {
@@ -444,12 +464,17 @@ public class UI : MonoBehaviour
             Musics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
 
             var checksumClient = new RestClient("https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getJacket/getChecksum/?command=all");
-            var checksumResponse = checksumClient.Execute(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
+            var checksumResponse = await checksumClient.ExecuteAsync(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
             adata.checksumsJson = JObject.Parse(checksumResponse.Content);
 
             var audioChecksumClient = new RestClient("https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getPreviewAudio/getChecksum/?command=all");
-            var audioChecksumResponse = audioChecksumClient.Execute(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
+            var audioChecksumResponse = await audioChecksumClient.ExecuteAsync(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
             adata.audioChecksumsJson = JObject.Parse(audioChecksumResponse.Content);
+
+            // 取得成功時に条件を保存
+            lastFetchedSort = adata.sort;
+            lastFetchedOrder = adata.order;
+            lastFetchedGenre = adata.genre;
 
             StartCoroutine(SetupProcessCoroutine());
         }
@@ -482,6 +507,7 @@ public class UI : MonoBehaviour
         PageNo.GetComponent<TextMeshProUGUI>().text = $"{NowPage + 1}/{Musics.Count}";
         UpdateLevelTexts();
 
+        adata.loaded = 0;
         for (int i = 0; i < Musics.Count; i++)
         {
             MusicObj.Add(Instantiate(MusicPrefab));
@@ -493,9 +519,16 @@ public class UI : MonoBehaviour
             MusicObj[i].transform.position = pos;
             MusicObj[i].name = (string)Musics[i];
             MusicObj[i].transform.SetSiblingIndex(1);
+            
+            // プレハブの大量生成によるフリーズを防ぐため、一定数ごとにフレームをまたぐ
+            if (i % 5 == 0)
+            {
+                SetupProgress = (int)(((float)i / Musics.Count) * 100);
+                SetupText.GetComponent<TextMeshProUGUI>().text = $"Creating Panels... {SetupProgress}%";
+                yield return null;
+            }
         }
 
-        adata.loaded = 0;
         while (adata.loaded < Musics.Count)
         {
             SetupProgress = (int)(((float)adata.loaded / Musics.Count) * 100);
