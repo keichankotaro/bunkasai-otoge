@@ -1,11 +1,12 @@
-using UnityEngine;
-using TMPro;
 using Newtonsoft.Json.Linq;
-using UnityEngine.UI;
-using System.IO;
-using System.Collections.Generic;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SocialPlatforms.Impl;
+using UnityEngine.UI;
 
 public class SetText : MonoBehaviour
 {
@@ -14,6 +15,8 @@ public class SetText : MonoBehaviour
     public GameObject bpmText;
     public GameObject JacketImage;
     public GameObject MaxScore;
+    public GameObject Achievement;
+    public GameObject Rank;
 
     private string jacketCachePath;
 
@@ -70,6 +73,13 @@ public class SetText : MonoBehaviour
             MaxScore.GetComponent<TextMeshProUGUI>().alpha = 1f;
             int highScore = APIManager.Instance.GetHighScore(chart_name);
             MaxScore.GetComponent<TextMeshProUGUI>().text = "Score: " + highScore.ToString();
+            Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+            Rank.GetComponent<TextMeshProUGUI>().text = "Rank: " + ((highScore > 990000) ? "SSS+" : (highScore > 980000) ? "SSS" : (highScore > 975000) ? "SS+" : (highScore > 950000) ? "SS" : (highScore > 925000) ? "S+" : (highScore > 900000) ? "S" : (highScore > 850000) ? "AAA" : (highScore > 800000) ? "AA" : (highScore > 750000) ? "A" : (highScore > 700000) ? "BBB" : (highScore > 650000) ? "BB" : (highScore > 600000) ? "B" : (highScore > 550000) ? "C" : "D");
+            if (highScore == 0)
+            {
+                Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 0);
+                Rank.GetComponent<TextMeshProUGUI>().text = "";
+            }
         }
         else
         {

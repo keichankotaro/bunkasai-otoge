@@ -48,6 +48,8 @@ public class UI : MonoBehaviour
     public GameObject MasterText;
     public GameObject AnotherText;
 
+    public GameObject BGJacket;
+
     private float ClickTime = 0.0f;
     private float LastMove = 0.0f;
     private int Moved = 0;
@@ -92,6 +94,7 @@ public class UI : MonoBehaviour
     private Coroutine fadeLevelSelectorCoroutine = null;
 
     private string settingsFilePath;
+    private string jacketCachePath;
 
     private static string lastFetchedSort = null;
     private static string lastFetchedOrder = null;
@@ -119,6 +122,12 @@ public class UI : MonoBehaviour
         if (!Directory.Exists(previewAudioCachePath))
         {
             Directory.CreateDirectory(previewAudioCachePath);
+        }
+
+        jacketCachePath = Path.Combine(Application.persistentDataPath, "JacketCache");
+        if (!Directory.Exists(jacketCachePath))
+        {
+            Directory.CreateDirectory(jacketCachePath);
         }
 
         settingsFilePath = Path.Combine(Application.persistentDataPath, "settings.json");
@@ -598,6 +607,14 @@ public class UI : MonoBehaviour
                 }
             }
 
+            string musicName = Musics[NowPage];
+            string safeFileName = string.Join("_", musicName.Split(Path.GetInvalidFileNameChars()));
+            string localImagePath = Path.Combine(jacketCachePath, safeFileName + ".jpg");
+            byte[] fileData = File.ReadAllBytes(localImagePath);
+
+            Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            texture.LoadImage(fileData);
+            ApplyTexture(texture);
             PageNo.GetComponent<TextMeshProUGUI>().text = $"{NowPage + 1}/{MusicObj.Count}";
             UpdateLevelTexts();
 
@@ -1445,5 +1462,14 @@ public class UI : MonoBehaviour
             bytes = bytes / 1024f;
         }
         return $"{bytes:F1} {sizes[order]}";
+    }
+
+    void ApplyTexture(Texture2D texture)
+    {
+        if (BGJacket == null) return;
+        texture.filterMode = FilterMode.Trilinear;
+        texture.Apply();
+        Sprite jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+        BGJacket.GetComponent<UnityEngine.UI.Image>().sprite = jacket;
     }
 }
