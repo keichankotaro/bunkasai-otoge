@@ -30,7 +30,40 @@ public class ScoreManeger : MonoBehaviour
     private bool mode = false;
     private double prievous = 0;
 
-    // Start is called before the first frame update
+    // キャッシュ済みTMPコンポーネント（毎フレームGetComponent回避）
+    private TextMeshProUGUI scoreText;
+    private TextMeshProUGUI comboText;
+    private TextMeshProUGUI perfectText;
+    private TextMeshProUGUI greatText;
+    private TextMeshProUGUI goodText;
+    private TextMeshProUGUI missText;
+    private TextMeshProUGUI fastText;
+    private TextMeshProUGUI lateText;
+
+    // 前回値キャッシュ（変化時のみUI更新でGC削減）
+    private int prevRatioScore = -1;
+    private int prevCombo = -1;
+    private int prevPerfect = -1;
+    private int prevGreat = -1;
+    private int prevGood = -1;
+    private int prevMiss = -1;
+    private int prevFast = -1;
+    private int prevLate = -1;
+    private bool prevAutoPlay = false;
+
+    void Start()
+    {
+        // GetComponentをStart()で1回だけ呼んでキャッシュ
+        scoreText = score_t.GetComponent<TextMeshProUGUI>();
+        comboText = combo_t.GetComponent<TextMeshProUGUI>();
+        perfectText = perfect_t.GetComponent<TextMeshProUGUI>();
+        greatText = great_t.GetComponent<TextMeshProUGUI>();
+        goodText = good_t.GetComponent<TextMeshProUGUI>();
+        missText = miss_t.GetComponent<TextMeshProUGUI>();
+        fastText = fast_t.GetComponent<TextMeshProUGUI>();
+        lateText = late_t.GetComponent<TextMeshProUGUI>();
+    }
+
     private void Setup()
     {
         // ここからスコア初期化
@@ -85,6 +118,17 @@ public class ScoreManeger : MonoBehaviour
             DebugText.max_score_l3 = (l3_notes * 5) + "";
             DebugText.max_score_l4 = (l4_notes * 5) + "";
         }
+
+        // 前回値キャッシュをリセット
+        prevRatioScore = -1;
+        prevCombo = -1;
+        prevPerfect = -1;
+        prevGreat = -1;
+        prevGood = -1;
+        prevMiss = -1;
+        prevFast = -1;
+        prevLate = -1;
+
         setupped = true;
         // ここまでスコア初期化
     }
@@ -107,35 +151,72 @@ public class ScoreManeger : MonoBehaviour
                     ratioscore = 1000000;
                 }
 
-                string s;
-                if (ratioscore.ToString().Length <= 7)
+                // オートプレイ切替時のみ更新
+                if (adata.auto_play != prevAutoPlay)
                 {
-                    s = new string('0', 7 - ratioscore.ToString().Length) + (ratioscore + "");
-                }
-                else
-                {
-                    s = ratioscore.ToString();
-                }
-
-                if (adata.auto_play)
-                {
-                    //score_t.GetComponent<TextMeshProUGUI>().text = "Auto " + s;
-                    //combo_t.GetComponent<TextMeshProUGUI>().text = "Auto " + combo;
-                    score_t.GetComponent<TextMeshProUGUI>().text = "Auto";
-                    combo_t.GetComponent<TextMeshProUGUI>().text = "Auto";
-                }
-                else
-                {
-                    score_t.GetComponent<TextMeshProUGUI>().text = s;
-                    combo_t.GetComponent<TextMeshProUGUI>().text = combo + "";
+                    prevAutoPlay = adata.auto_play;
+                    if (adata.auto_play)
+                    {
+                        scoreText.text = "Auto";
+                        comboText.text = "Auto";
+                    }
+                    prevRatioScore = -1; // 強制更新
+                    prevCombo = -1;
                 }
 
-                perfect_t.GetComponent<TextMeshProUGUI>().text = "Perfect: " + (ResultUI.PerfectPlus + ResultUI.Perfect);
-                great_t.GetComponent<TextMeshProUGUI>().text = "Great: " + ResultUI.Great;
-                good_t.GetComponent<TextMeshProUGUI>().text = "Good: " + ResultUI.Good;
-                miss_t.GetComponent<TextMeshProUGUI>().text = "Miss: " + ResultUI.Miss;
-                fast_t.GetComponent<TextMeshProUGUI>().text = "Fast: " + (ResultUI.PerfectFast + ResultUI.GreatFast + ResultUI.GoodFast);
-                late_t.GetComponent<TextMeshProUGUI>().text = "Late: " + (ResultUI.PerfectLate + ResultUI.GreatLate + ResultUI.GoodLate);
+                // 値が変わった時だけUI更新（GCアロケーション削減）
+                if (!adata.auto_play)
+                {
+                    if (ratioscore != prevRatioScore)
+                    {
+                        prevRatioScore = ratioscore;
+                        scoreText.text = ratioscore.ToString("D7");
+                    }
+                    if (combo != prevCombo)
+                    {
+                        prevCombo = combo;
+                        comboText.SetText("{0}", combo);
+                    }
+                }
+
+                int curPerfect = ResultUI.PerfectPlus + ResultUI.Perfect;
+                if (curPerfect != prevPerfect)
+                {
+                    prevPerfect = curPerfect;
+                    perfectText.SetText("Perfect: {0}", curPerfect);
+                }
+
+                if (ResultUI.Great != prevGreat)
+                {
+                    prevGreat = ResultUI.Great;
+                    greatText.SetText("Great: {0}", ResultUI.Great);
+                }
+
+                if (ResultUI.Good != prevGood)
+                {
+                    prevGood = ResultUI.Good;
+                    goodText.SetText("Good: {0}", ResultUI.Good);
+                }
+
+                if (ResultUI.Miss != prevMiss)
+                {
+                    prevMiss = ResultUI.Miss;
+                    missText.SetText("Miss: {0}", ResultUI.Miss);
+                }
+
+                int curFast = ResultUI.PerfectFast + ResultUI.GreatFast + ResultUI.GoodFast;
+                if (curFast != prevFast)
+                {
+                    prevFast = curFast;
+                    fastText.SetText("Fast: {0}", curFast);
+                }
+
+                int curLate = ResultUI.PerfectLate + ResultUI.GreatLate + ResultUI.GoodLate;
+                if (curLate != prevLate)
+                {
+                    prevLate = curLate;
+                    lateText.SetText("Late: {0}", curLate);
+                }
 
                 if (DebugText.isDebugMode)
                 {
