@@ -1010,9 +1010,109 @@ public class UI : MonoBehaviour
 
         if (SetupText != null)
         {
+            SetupText.GetComponent<TextMeshProUGUI>().text = "音源ダウンロード完了。動画を確認中...";
+        }
+        yield return null;
+
+        // 5. 動画のダウンロード（存在する曲のみ）
+        int videoCompleted = 0;
+        int videoTotal = 0;
+        int videoCurrentDownloads = 0;
+
+        // まず全曲の動画存在チェックを行い、存在する曲のリストを作成
+        List<int> videoIndices = new List<int>();
+        for (int i = 0; i < total; i++)
+        {
+            string musicName = Musics[i];
+            string safeFileName = adata.GetSafeFileName(musicName);
+            string videoSavePath = Path.Combine(musicPath, safeFileName + ".mp4");
+
+            // 既にダウンロード済みならスキップ
+            if (File.Exists(videoSavePath))
+            {
+                AddDownloadLog($"動画: {musicName} (キャッシュ済み)", contentTransform);
+                continue;
+            }
+
+            string encodedMusicName = Uri.EscapeDataString(musicName);
+            string videoExistsUrl = $"{baseUrl}/videoExists?name={encodedMusicName}";
+            using (UnityWebRequest existsReq = UnityWebRequest.Get(videoExistsUrl))
+            {
+                existsReq.timeout = 10;
+                yield return existsReq.SendWebRequest();
+                if (existsReq.result == UnityWebRequest.Result.Success)
+                {
+                    try
+                    {
+                        JObject existsData = JObject.Parse(existsReq.downloadHandler.text);
+                        if (existsData["exists"].ToObject<bool>())
+                        {
+                            videoIndices.Add(i);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"[DownloadAll] Failed to parse videoExists for {musicName}: {e.Message}");
+                    }
+                }
+            }
+
+            if (SetupText != null)
+            {
+                SetupText.GetComponent<TextMeshProUGUI>().text = $"動画の存在を確認中... ({i + 1}/{total})";
+            }
+        }
+
+        videoTotal = videoIndices.Count;
+        if (videoTotal > 0)
+        {
+            bool[] videoDone = new bool[videoTotal];
+
+            IEnumerator DownloadVideo(int listIdx)
+            {
+                while (videoCurrentDownloads >= maxConcurrentDownloads) yield return null;
+                videoCurrentDownloads++;
+
+                int musicIdx = videoIndices[listIdx];
+                string musicName = Musics[musicIdx];
+                string encodedMusicName = Uri.EscapeDataString(musicName);
+                string safeFileName = adata.GetSafeFileName(musicName);
+                string videoUrl = $"{baseUrl}/getVideo?chart={encodedMusicName}";
+                string videoSavePath = Path.Combine(musicPath, safeFileName + ".mp4");
+
+                TextMeshProUGUI logLine = AddDownloadLog($"動画: {musicName}", contentTransform);
+                yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(videoUrl, videoSavePath, logLine));
+
+                videoDone[listIdx] = true;
+                videoCompleted++;
+                videoCurrentDownloads--;
+            }
+
+            for (int i = 0; i < videoTotal; i++)
+            {
+                StartCoroutine(DownloadVideo(i));
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            while (videoDone.Any(x => !x))
+            {
+                if (SetupText != null)
+                {
+                    SetupText.GetComponent<TextMeshProUGUI>().text = $"動画ダウンロード中... ({videoCompleted}/{videoTotal})";
+                }
+                yield return null;
+            }
+        }
+        else
+        {
+            Debug.Log("[DownloadAll] No videos to download.");
+        }
+
+        if (SetupText != null)
+        {
             SetupText.GetComponent<TextMeshProUGUI>().text = "全てのダウンロードが完了しました。";
         }
-        Debug.Log("[DownloadAll] Finished downloading all music data.");
+        Debug.Log("[DownloadAll] Finished downloading all music data (including videos).");
         yield return new WaitForSeconds(2); // 完了メッセージを2秒表示
         if (previewAudioSource.isPlaying)
         {
