@@ -22,6 +22,7 @@ public class ResultUI : MonoBehaviour
     [SerializeField] public GameObject LevelText;
     [SerializeField] public GameObject DifficultyText;
     [SerializeField] public GameObject DifficultyBackGround;
+    [SerializeField] public GameObject ScoreDiffText;
     [SerializeField] public GameObject BackGroundJacket;
     [SerializeField] public GameObject ResText;
     [SerializeField] public GameObject ComposerText;

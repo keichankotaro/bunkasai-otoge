@@ -31,96 +31,116 @@ public class SetText : MonoBehaviour
 
     void Start()
     {
-        string chart_name = name;
-        if (adata.musicsJson == null)
+        try
         {
-            Debug.LogError("adata.musicsJson is not initialized!");
-            adata.loaded++;
-            return;
+            string chart_name = name;
+            if (adata.musicsJson == null)
+            {
+                Debug.LogError("adata.musicsJson is not initialized!");
+                adata.loaded++;
+                return;
+            }
+
+            List<string> musics = (adata.musicsJson["charts"] as JArray).ToObject<List<string>>();
+            int musicIndex = musics.IndexOf(chart_name);
+
+            if (musicIndex == -1)
+            {
+                Debug.LogError($"Music '{chart_name}' not found in the list.");
+                adata.loaded++;
+                return;
+            }
+
+            string composer = adata.musicsJson["composers"][musicIndex].ToString();
+            string bpm = "BPM: " + adata.musicsJson["bpms"][musicIndex];
+
+            if (musicTitleText != null) musicTitleText.GetComponent<TextMeshProUGUI>().text = chart_name;
+            if (composerText != null) composerText.GetComponent<TextMeshProUGUI>().text = composer;
+            if (bpmText != null) bpmText.GetComponent<TextMeshProUGUI>().text = bpm;
+
+            // Update High Score Text
+            UpdateHighScoreText();
+
+            // Load Jacket Image
+            StartCoroutine(LoadOrDownloadJacket(chart_name));
         }
-
-        List<string> musics = (adata.musicsJson["charts"] as JArray).ToObject<List<string>>();
-        int musicIndex = musics.IndexOf(chart_name);
-
-        if (musicIndex == -1)
+        catch (Exception e)
         {
-            Debug.LogError($"Music '{chart_name}' not found in the list.");
+            Debug.LogError($"[SetText] Error in Start for {name}: {e.Message}\n{e.StackTrace}");
+            // エラー時も無限ロードを回避するためにカウントを進める
             adata.loaded++;
-            return;
         }
-
-        string composer = adata.musicsJson["composers"][musicIndex].ToString();
-        string bpm = "BPM: " + adata.musicsJson["bpms"][musicIndex];
-
-        musicTitleText.GetComponent<TextMeshProUGUI>().text = chart_name;
-        composerText.GetComponent<TextMeshProUGUI>().text = composer;
-        bpmText.GetComponent<TextMeshProUGUI>().text = bpm;
-
-        // Update High Score Text
-        UpdateHighScoreText();
-
-        // Load Jacket Image
-        StartCoroutine(LoadOrDownloadJacket(chart_name));
     }
 
     public void UpdateHighScoreText()
     {
-        if (MaxScore == null) return;
-        string chart_name = name;
-
-        if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn())
+        try
         {
-            MaxScore.GetComponent<TextMeshProUGUI>().alpha = 1f;
-            int highScore = APIManager.Instance.GetHighScore(chart_name);
-            MaxScore.GetComponent<TextMeshProUGUI>().text = "Score: " + highScore.ToString();
-            string rank = ((highScore > 990000) ? "SSS+" : (highScore > 980000) ? "SSS" : (highScore > 975000) ? "SS+" : (highScore > 950000) ? "SS" : (highScore > 925000) ? "S+" : (highScore > 900000) ? "S" : (highScore > 850000) ? "AAA" : (highScore > 800000) ? "AA" : (highScore > 750000) ? "A" : (highScore > 700000) ? "BBB" : (highScore > 650000) ? "BB" : (highScore > 600000) ? "B" : (highScore > 550000) ? "C" : "D");
-            Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
-            if (rank == "D")
+            if (MaxScore == null) return;
+            string chart_name = name;
+
+            if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn())
             {
-                var c = new Color32(255, 255, 255, 255);
-                Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
-                Rank.GetComponent<TextMeshProUGUI>().color = c;
+                MaxScore.GetComponent<TextMeshProUGUI>().alpha = 1f;
+                int highScore = APIManager.Instance.GetHighScore(chart_name);
+                MaxScore.GetComponent<TextMeshProUGUI>().text = "Score: " + highScore.ToString();
+                string rank = ((highScore > 990000) ? "SSS+" : (highScore > 980000) ? "SSS" : (highScore > 975000) ? "SS+" : (highScore > 950000) ? "SS" : (highScore > 925000) ? "S+" : (highScore > 900000) ? "S" : (highScore > 850000) ? "AAA" : (highScore > 800000) ? "AA" : (highScore > 750000) ? "A" : (highScore > 700000) ? "BBB" : (highScore > 650000) ? "BB" : (highScore > 600000) ? "B" : (highScore > 550000) ? "C" : "D");
+                if (Rank != null)
+                {
+                    Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+                    if (rank == "D")
+                    {
+                        var c = new Color32(255, 255, 255, 255);
+                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                        Rank.GetComponent<TextMeshProUGUI>().color = c;
+                    }
+                    else if (rank == "C")
+                    {
+                        var c = new Color32(0, 255, 0, 255);
+                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                        Rank.GetComponent<TextMeshProUGUI>().color = c;
+                    }
+                    else if (rank == "B" || rank == "BB" || rank == "BBB")
+                    {
+                        var c = new Color32(0, 0, 255, 255);
+                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
+                        Rank.GetComponent<TextMeshProUGUI>().color = c;
+                    }
+                    else if (rank == "A" || rank == "AA" || rank == "AAA")
+                    {
+                        var c_start = new Color32(255, 208, 0, 255);
+                        var c_end = new Color32(255, 254, 218, 255);
+                        var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                        Rank.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                        Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+                    }
+                    else if (rank == "S" || rank == "S+" || rank == "SS" || rank == "SS+" || rank == "SSS" || rank == "SSS+")
+                    {
+                        var c_start = new Color32(255, 0, 250, 255);
+                        var c_end = new Color32(0, 238, 255, 255);
+                        var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
+                        Rank.GetComponent<TextMeshProUGUI>().colorGradient = c;
+                        Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
+                    }
+                    Rank.GetComponent<TextMeshProUGUI>().text = rank;
+                    if (highScore == 0)
+                    {
+                        Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 0);
+                        Rank.GetComponent<TextMeshProUGUI>().text = "";
+                    }
+                }
             }
-            else if (rank == "C")
+            else
             {
-                var c = new Color32(0, 255, 0, 255);
-                Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
-                Rank.GetComponent<TextMeshProUGUI>().color = c;
-            }
-            else if (rank == "B" || rank == "BB" || rank == "BBB")
-            {
-                var c = new Color32(0, 0, 255, 255);
-                Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
-                Rank.GetComponent<TextMeshProUGUI>().color = c;
-            }
-            else if (rank == "A" || rank == "AA" || rank == "AAA")
-            {
-                var c_start = new Color32(255, 208, 0, 255);
-                var c_end = new Color32(255, 254, 218, 255);
-                var c = new VertexGradient(c_start, c_end, c_start, c_end);
-                Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
-                Rank.GetComponent<TextMeshProUGUI>().colorGradient = c;
-                Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
-            }
-            else if (rank == "S" || rank == "S+" || rank == "SS" || rank == "SS+" || rank == "SSS" || rank == "SSS+")
-            {
-                var c_start = new Color32(255, 0, 250, 255);
-                var c_end = new Color32(0, 238, 255, 255);
-                var c = new VertexGradient(c_start, c_end, c_start, c_end);
-                Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
-                Rank.GetComponent<TextMeshProUGUI>().colorGradient = c;
-                Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
-            }
-            Rank.GetComponent<TextMeshProUGUI>().text = rank;
-            if (highScore == 0)
-            {
-                Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 0);
-                Rank.GetComponent<TextMeshProUGUI>().text = "";
+                MaxScore.GetComponent<TextMeshProUGUI>().alpha = 0f;
+                if (Rank != null) Rank.GetComponent<TextMeshProUGUI>().text = "";
             }
         }
-        else
+        catch (Exception e)
         {
-            MaxScore.GetComponent<TextMeshProUGUI>().alpha = 0f;
+            Debug.LogError($"[SetText] Error in UpdateHighScoreText for {name}: {e.Message}");
         }
     }
 
