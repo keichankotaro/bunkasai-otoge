@@ -79,77 +79,91 @@ public class SetText : MonoBehaviour
             if (MaxScore == null) return;
             string chart_name = name;
 
+            if (Rank != null) Rank.SetActive(true);
+            if (Achievement != null) Achievement.SetActive(true);
+
+            var maxScoreTmp = MaxScore.GetComponentInChildren<TextMeshProUGUI>(true);
+            
+            var rankImage = Rank != null ? Rank.GetComponent<Image>() : null;
+            var rankTmp = Rank != null ? Rank.GetComponentInChildren<TextMeshProUGUI>(true) : null;
+            
+            var achievementImage = Achievement != null ? Achievement.GetComponent<Image>() : null;
+            var achievementTmp = Achievement != null ? Achievement.GetComponentInChildren<TextMeshProUGUI>(true) : null;
+
             if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn())
             {
-                var maxScoreTmp = MaxScore.GetComponent<TextMeshProUGUI>();
-                if (maxScoreTmp != null)
+                if (maxScoreTmp != null) maxScoreTmp.alpha = 1f;
+
+                string[] diffs = { "Master", "Another", "Hard", "Easy" };
+                APIManager.ScoreRecord bestRecord = null;
+
+                foreach (var d in diffs)
                 {
-                    maxScoreTmp.alpha = 1f;
-                    int highScore = APIManager.Instance.GetHighScore(chart_name);
-                    maxScoreTmp.text = "Score: " + highScore.ToString();
-                    string rank = ((highScore > 990000) ? "SSS+" : (highScore > 980000) ? "SSS" : (highScore > 975000) ? "SS+" : (highScore > 950000) ? "SS" : (highScore > 925000) ? "S+" : (highScore > 900000) ? "S" : (highScore > 850000) ? "AAA" : (highScore > 800000) ? "AA" : (highScore > 750000) ? "A" : (highScore > 700000) ? "BBB" : (highScore > 650000) ? "BB" : (highScore > 600000) ? "B" : (highScore > 550000) ? "C" : "D");
-                    
-                    if (Rank != null)
+                    bestRecord = APIManager.Instance.GetHighScoreRecord(chart_name, d);
+                    if (bestRecord != null && bestRecord.Score > 0)
                     {
-                        var rankTmp = Rank.GetComponent<TextMeshProUGUI>();
-                        if (rankTmp != null)
-                        {
-                            rankTmp.color = new Color32(255, 255, 255, 255);
-                            if (rank == "D")
-                            {
-                                var c = new Color32(255, 255, 255, 255);
-                                rankTmp.enableVertexGradient = false;
-                                rankTmp.color = c;
-                            }
-                            else if (rank == "C")
-                            {
-                                var c = new Color32(0, 255, 0, 255);
-                                rankTmp.enableVertexGradient = false;
-                                rankTmp.color = c;
-                            }
-                            else if (rank == "B" || rank == "BB" || rank == "BBB")
-                            {
-                                var c = new Color32(0, 0, 255, 255);
-                                rankTmp.enableVertexGradient = false;
-                                rankTmp.color = c;
-                            }
-                            else if (rank == "A" || rank == "AA" || rank == "AAA")
-                            {
-                                var c_start = new Color32(255, 208, 0, 255);
-                                var c_end = new Color32(255, 254, 218, 255);
-                                var c = new VertexGradient(c_start, c_end, c_start, c_end);
-                                rankTmp.enableVertexGradient = true;
-                                rankTmp.colorGradient = c;
-                                rankTmp.color = new Color32(255, 255, 255, 255);
-                            }
-                            else if (rank == "S" || rank == "S+" || rank == "SS" || rank == "SS+" || rank == "SSS" || rank == "SSS+")
-                            {
-                                var c_start = new Color32(255, 0, 250, 255);
-                                var c_end = new Color32(0, 238, 255, 255);
-                                var c = new VertexGradient(c_start, c_end, c_start, c_end);
-                                rankTmp.enableVertexGradient = true;
-                                rankTmp.colorGradient = c;
-                                rankTmp.color = new Color32(255, 255, 255, 255);
-                            }
-                            rankTmp.text = rank;
-                            if (highScore == 0)
-                            {
-                                rankTmp.color = new Color32(255, 255, 255, 0);
-                                rankTmp.text = "";
-                            }
-                        }
+                        break;
                     }
+                }
+
+                if (bestRecord != null && bestRecord.Score > 0)
+                {
+                    int highScore = bestRecord.Score;
+                    if (maxScoreTmp != null) maxScoreTmp.text = "Score: " + highScore.ToString();
+
+                    string rank = ((highScore > 990000) ? "SSS+" : (highScore > 980000) ? "SSS" : (highScore > 975000) ? "SS+" : (highScore > 950000) ? "SS" : (highScore > 925000) ? "S+" : (highScore > 900000) ? "S" : (highScore > 850000) ? "AAA" : (highScore > 800000) ? "AA" : (highScore > 750000) ? "A" : (highScore > 700000) ? "BBB" : (highScore > 650000) ? "BB" : (highScore > 600000) ? "B" : (highScore > 550000) ? "C" : "D");
+
+                    string achievement = "Failed";
+                    if (highScore >= 1000000) achievement = "AP+";
+                    else if (bestRecord.PerfectPlus + bestRecord.Perfect >= bestRecord.MaxNotes && bestRecord.MaxNotes > 0) achievement = "AP";
+                    else if (bestRecord.Miss == 0 && (bestRecord.PerfectPlus + bestRecord.Perfect + bestRecord.Great + bestRecord.Good == bestRecord.MaxNotes) && bestRecord.MaxNotes > 0) achievement = "FC";
+                    else if (highScore >= 750000) achievement = "Clear";
+                    else if (highScore > 0) achievement = "Played";
+
+                    Color32 colorApp = new Color32(0, 255, 255, 255); // Cyan
+                    Color32 colorAp = new Color32(255, 100, 255, 255); // Pink
+                    Color32 colorFc = new Color32(255, 255, 0, 255); // Yellow
+                    Color32 colorClear = new Color32(0, 255, 0, 255); // Green
+                    Color32 colorGray = new Color32(150, 150, 150, 255); // Gray
+
+                    Color32 rankColor = colorGray;
+                    if (rank.StartsWith("S")) rankColor = colorAp;
+                    else if (rank.StartsWith("A")) rankColor = colorFc;
+                    else if (rank.StartsWith("B")) rankColor = colorClear;
+
+                    Color32 achievementColor = colorGray;
+                    if (achievement == "AP+") achievementColor = colorApp;
+                    else if (achievement == "AP") achievementColor = colorAp;
+                    else if (achievement == "FC") achievementColor = colorFc;
+                    else if (achievement == "Clear") achievementColor = colorClear;
+
+                    if (Rank != null) Rank.SetActive(true);
+                    if (rankImage != null) rankImage.color = rankColor;
+                    if (rankTmp != null)
+                    {
+                        rankTmp.text = rank;
+                    }
+
+                    if (achievement == "Failed" || achievement == "Played") {
+                        if (Achievement != null) Achievement.SetActive(false);
+                    } else {
+                        if (Achievement != null) Achievement.SetActive(true);
+                        if (achievementImage != null) achievementImage.color = achievementColor;
+                        if (achievementTmp != null) achievementTmp.text = achievement;
+                    }
+                }
+                else
+                {
+                    if (maxScoreTmp != null) maxScoreTmp.text = "Score: 0";
+                    if (Rank != null) Rank.SetActive(false);
+                    if (Achievement != null) Achievement.SetActive(false);
                 }
             }
             else
             {
-                var maxScoreTmp = MaxScore.GetComponent<TextMeshProUGUI>();
                 if (maxScoreTmp != null) maxScoreTmp.alpha = 0f;
-                if (Rank != null)
-                {
-                    var rankTmp = Rank.GetComponent<TextMeshProUGUI>();
-                    if (rankTmp != null) rankTmp.text = "";
-                }
+                if (Rank != null) Rank.SetActive(false);
+                if (Achievement != null) Achievement.SetActive(false);
             }
         }
         catch (Exception e)

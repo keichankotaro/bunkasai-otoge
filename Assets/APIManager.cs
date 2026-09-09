@@ -80,8 +80,19 @@ public class APIManager : MonoBehaviour
         }
     }
 
+    public class ScoreRecord
+    {
+        public int Score;
+        public int PerfectPlus;
+        public int Perfect;
+        public int Great;
+        public int Good;
+        public int Miss;
+        public int MaxNotes;
+    }
+
     private Dictionary<string, int> _highScores = new Dictionary<string, int>();
-    private Dictionary<string, int> _highScoresWithDiff = new Dictionary<string, int>();
+    private Dictionary<string, ScoreRecord> _highScoresWithDiff = new Dictionary<string, ScoreRecord>();
     private bool _highScoresFetched = false;
     private bool _isFetchingHighScores = false; // 二重取得防止フラグ
     public Action OnHighScoresUpdated;
@@ -92,10 +103,16 @@ public class APIManager : MonoBehaviour
         return score;
     }
 
+    public ScoreRecord GetHighScoreRecord(string songTitle, string difficulty)
+    {
+        _highScoresWithDiff.TryGetValue(songTitle + "_" + difficulty, out ScoreRecord record);
+        return record;
+    }
+
     public int GetHighScore(string songTitle, string difficulty)
     {
-        _highScoresWithDiff.TryGetValue(songTitle + "_" + difficulty, out int score);
-        return score;
+        var record = GetHighScoreRecord(songTitle, difficulty);
+        return record != null ? record.Score : 0;
     }
 
     public void InvalidateHighScores()
@@ -148,8 +165,18 @@ public class APIManager : MonoBehaviour
                                 _highScores.Add(songTitle, highScore);
                             }
 
-                            // Store specific difficulty score
-                            _highScoresWithDiff[songTitle + "_" + difficulty] = highScore;
+                            // Store specific difficulty score record
+                            ScoreRecord record = new ScoreRecord
+                            {
+                                Score = highScore,
+                                PerfectPlus = scoreData["perfect_plus"]?.ToObject<int>() ?? 0,
+                                Perfect = scoreData["perfect"]?.ToObject<int>() ?? 0,
+                                Great = scoreData["great"]?.ToObject<int>() ?? 0,
+                                Good = scoreData["good"]?.ToObject<int>() ?? 0,
+                                Miss = scoreData["miss"]?.ToObject<int>() ?? 0,
+                                MaxNotes = scoreData["maxnotes"]?.ToObject<int>() ?? 0
+                            };
+                            _highScoresWithDiff[songTitle + "_" + difficulty] = record;
                         }
                         _highScoresFetched = true;
                         Debug.Log("High scores fetched successfully.");
