@@ -423,6 +423,10 @@ public class UI : MonoBehaviour
                 httpJsonObj = JObject.Parse(jsonContent);
                 adata.musicsJson = httpJsonObj;
                 Musics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
+                
+                // オフライン時は強制的に文字コード昇順（数字→英字→ひらがな→カタカナ→漢字）にソート
+                Musics = Musics.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+
                 adata.checksumsJson = null; // オフラインでは不要
                 adata.audioChecksumsJson = null; // オフラインでは不要
                 StartCoroutine(SetupProcessCoroutine());
