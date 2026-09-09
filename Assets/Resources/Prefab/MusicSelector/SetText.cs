@@ -81,61 +81,75 @@ public class SetText : MonoBehaviour
 
             if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn())
             {
-                MaxScore.GetComponent<TextMeshProUGUI>().alpha = 1f;
-                int highScore = APIManager.Instance.GetHighScore(chart_name);
-                MaxScore.GetComponent<TextMeshProUGUI>().text = "Score: " + highScore.ToString();
-                string rank = ((highScore > 990000) ? "SSS+" : (highScore > 980000) ? "SSS" : (highScore > 975000) ? "SS+" : (highScore > 950000) ? "SS" : (highScore > 925000) ? "S+" : (highScore > 900000) ? "S" : (highScore > 850000) ? "AAA" : (highScore > 800000) ? "AA" : (highScore > 750000) ? "A" : (highScore > 700000) ? "BBB" : (highScore > 650000) ? "BB" : (highScore > 600000) ? "B" : (highScore > 550000) ? "C" : "D");
-                if (Rank != null)
+                var maxScoreTmp = MaxScore.GetComponent<TextMeshProUGUI>();
+                if (maxScoreTmp != null)
                 {
-                    Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
-                    if (rank == "D")
+                    maxScoreTmp.alpha = 1f;
+                    int highScore = APIManager.Instance.GetHighScore(chart_name);
+                    maxScoreTmp.text = "Score: " + highScore.ToString();
+                    string rank = ((highScore > 990000) ? "SSS+" : (highScore > 980000) ? "SSS" : (highScore > 975000) ? "SS+" : (highScore > 950000) ? "SS" : (highScore > 925000) ? "S+" : (highScore > 900000) ? "S" : (highScore > 850000) ? "AAA" : (highScore > 800000) ? "AA" : (highScore > 750000) ? "A" : (highScore > 700000) ? "BBB" : (highScore > 650000) ? "BB" : (highScore > 600000) ? "B" : (highScore > 550000) ? "C" : "D");
+                    
+                    if (Rank != null)
                     {
-                        var c = new Color32(255, 255, 255, 255);
-                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
-                        Rank.GetComponent<TextMeshProUGUI>().color = c;
-                    }
-                    else if (rank == "C")
-                    {
-                        var c = new Color32(0, 255, 0, 255);
-                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
-                        Rank.GetComponent<TextMeshProUGUI>().color = c;
-                    }
-                    else if (rank == "B" || rank == "BB" || rank == "BBB")
-                    {
-                        var c = new Color32(0, 0, 255, 255);
-                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = false;
-                        Rank.GetComponent<TextMeshProUGUI>().color = c;
-                    }
-                    else if (rank == "A" || rank == "AA" || rank == "AAA")
-                    {
-                        var c_start = new Color32(255, 208, 0, 255);
-                        var c_end = new Color32(255, 254, 218, 255);
-                        var c = new VertexGradient(c_start, c_end, c_start, c_end);
-                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
-                        Rank.GetComponent<TextMeshProUGUI>().colorGradient = c;
-                        Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
-                    }
-                    else if (rank == "S" || rank == "S+" || rank == "SS" || rank == "SS+" || rank == "SSS" || rank == "SSS+")
-                    {
-                        var c_start = new Color32(255, 0, 250, 255);
-                        var c_end = new Color32(0, 238, 255, 255);
-                        var c = new VertexGradient(c_start, c_end, c_start, c_end);
-                        Rank.GetComponent<TextMeshProUGUI>().enableVertexGradient = true;
-                        Rank.GetComponent<TextMeshProUGUI>().colorGradient = c;
-                        Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 255);
-                    }
-                    Rank.GetComponent<TextMeshProUGUI>().text = rank;
-                    if (highScore == 0)
-                    {
-                        Rank.GetComponent<TextMeshProUGUI>().color = new Color32(255, 255, 255, 0);
-                        Rank.GetComponent<TextMeshProUGUI>().text = "";
+                        var rankTmp = Rank.GetComponent<TextMeshProUGUI>();
+                        if (rankTmp != null)
+                        {
+                            rankTmp.color = new Color32(255, 255, 255, 255);
+                            if (rank == "D")
+                            {
+                                var c = new Color32(255, 255, 255, 255);
+                                rankTmp.enableVertexGradient = false;
+                                rankTmp.color = c;
+                            }
+                            else if (rank == "C")
+                            {
+                                var c = new Color32(0, 255, 0, 255);
+                                rankTmp.enableVertexGradient = false;
+                                rankTmp.color = c;
+                            }
+                            else if (rank == "B" || rank == "BB" || rank == "BBB")
+                            {
+                                var c = new Color32(0, 0, 255, 255);
+                                rankTmp.enableVertexGradient = false;
+                                rankTmp.color = c;
+                            }
+                            else if (rank == "A" || rank == "AA" || rank == "AAA")
+                            {
+                                var c_start = new Color32(255, 208, 0, 255);
+                                var c_end = new Color32(255, 254, 218, 255);
+                                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                                rankTmp.enableVertexGradient = true;
+                                rankTmp.colorGradient = c;
+                                rankTmp.color = new Color32(255, 255, 255, 255);
+                            }
+                            else if (rank == "S" || rank == "S+" || rank == "SS" || rank == "SS+" || rank == "SSS" || rank == "SSS+")
+                            {
+                                var c_start = new Color32(255, 0, 250, 255);
+                                var c_end = new Color32(0, 238, 255, 255);
+                                var c = new VertexGradient(c_start, c_end, c_start, c_end);
+                                rankTmp.enableVertexGradient = true;
+                                rankTmp.colorGradient = c;
+                                rankTmp.color = new Color32(255, 255, 255, 255);
+                            }
+                            rankTmp.text = rank;
+                            if (highScore == 0)
+                            {
+                                rankTmp.color = new Color32(255, 255, 255, 0);
+                                rankTmp.text = "";
+                            }
+                        }
                     }
                 }
             }
             else
             {
-                MaxScore.GetComponent<TextMeshProUGUI>().alpha = 0f;
-                if (Rank != null) Rank.GetComponent<TextMeshProUGUI>().text = "";
+                var maxScoreTmp = MaxScore.GetComponent<TextMeshProUGUI>();
+                if (maxScoreTmp != null) maxScoreTmp.alpha = 0f;
+                if (Rank != null)
+                {
+                    var rankTmp = Rank.GetComponent<TextMeshProUGUI>();
+                    if (rankTmp != null) rankTmp.text = "";
+                }
             }
         }
         catch (Exception e)

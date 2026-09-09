@@ -283,38 +283,24 @@ public class ResultUI : MonoBehaviour
                 {
                     if (NewRecordComponent != null) NewRecordComponent.SetActive(true);
                     
-                    TextMeshProUGUI diffText = null;
-                    if (NewRecordComponent != null)
+                    if (ScoreDiffText != null)
                     {
-                        Transform diffTransform = NewRecordComponent.transform.Find("Diff");
-                        if (diffTransform != null) diffText = diffTransform.GetComponent<TextMeshProUGUI>();
-                    }
-
-                    if (diffText != null)
-                    {
-                        /*
-                        if (oldHighScore > 0)
-                        {
-                            diffText.text = "+" + diff.ToString("N0");
-                        }
-                        else
-                        {
-                            diffText.text = "+" + diff.ToString("N0"); // 初プレイ時
-                        }
-                        */
-                        diffText.text = "High Score " + score.ToString() + " +" + diff.ToString("N0");
+                        ScoreDiffText.SetActive(true);
+                        ScoreDiffText.GetComponent<TextMeshProUGUI>().text = $"New Record! {score} +{diff}";
                     }
                 }
                 else
                 {
                     // ハイスコアではない場合は非表示
                     if (NewRecordComponent != null) NewRecordComponent.SetActive(false);
+                    if (ScoreDiffText != null) ScoreDiffText.SetActive(false);
                 }
             }
             else
             {
                 // ログインしていない、またはオートプレイの場合は非表示
                 if (NewRecordComponent != null) NewRecordComponent.SetActive(false);
+                if (ScoreDiffText != null) ScoreDiffText.SetActive(false);
             }
 
             // Update result display flags
