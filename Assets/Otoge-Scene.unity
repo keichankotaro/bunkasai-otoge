@@ -11390,7 +11390,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -854.1, y: 110}
+  m_AnchoredPosition: {x: -738, y: 110}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &632920291
@@ -17099,6 +17099,7 @@ MonoBehaviour:
   LevelText: {fileID: 318399626}
   DifficultyText: {fileID: 774459720}
   DifficultyBackGround: {fileID: 576067881}
+  ScoreDiffText: {fileID: 887335235}
   BackGroundJacket: {fileID: 2107657478}
   ResText: {fileID: 1352004619}
   ComposerText: {fileID: 939999173}
@@ -27109,7 +27110,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -728.2, y: 110}
+  m_AnchoredPosition: {x: -853, y: 110}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1546695248
@@ -32064,7 +32065,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 554.6}
+  m_AnchoredPosition: {x: 0, y: 572.58}
   m_SizeDelta: {x: 1920, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1845845177
