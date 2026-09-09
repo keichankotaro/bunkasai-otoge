@@ -242,7 +242,7 @@ public class LaneController : MonoBehaviour
                 length = (speed / 2) * (endsec - arrsec) / 2;
                 //GetComponent<Renderer>().material.color = new Color32(90, 255, 96, 255);
                 //GetComponent<Renderer>().material.color = new Color32(255, 255, 255, 255);
-                this.transform.localScale = new Vector3(0.7f, 0.01f, length);
+                this.transform.localScale = new Vector3(0.8f, 0.01f, length);
                 cachedMeshRenderer.sharedMaterial = longNoteMaterial;
                 isLongNoteActive = true;
             }
@@ -251,7 +251,7 @@ public class LaneController : MonoBehaviour
                 isLongNoteActive = false;
                 //GetComponent<Renderer>().material.color = new Color32(0, 255, 232, 255);
                 //GetComponent<Renderer>().material.color = new Color32(255, 255, 255, 255);
-                transform.localScale = new Vector3(0.7f, 0.01f, 0.1f);
+                transform.localScale = new Vector3(0.8f, 0.01f, 0.1f);
                 cachedMeshRenderer.sharedMaterial = noteMaterial;
             }
         }
@@ -425,11 +425,11 @@ public class LaneController : MonoBehaviour
                 endsec = currentNoteInfo.endtime;
                 float effectiveArrsec = long_click ? Mathf.Min(game_time, endsec) : arrsec;
                 length = (originalSpeed * (endsec - effectiveArrsec)) / 2;
-                transform.localScale = new Vector3(0.7f, 0.01f, length);
+                transform.localScale = new Vector3(0.8f, 0.01f, length);
             }
             transform.position = new Vector3(
                 transform.position.x,
-                isLongNoteActive ? 0.0001f : 0.0004f,
+                isLongNoteActive ? 0.01f : 0.02f, // Fix Z-fighting with the lane
                 whereiam() + (isLongNoteActive ? (length / 2.0f) : 0)
             );
             // ここまでスピード・位置更新
