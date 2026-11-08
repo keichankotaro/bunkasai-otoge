@@ -47,6 +47,10 @@ public class PlayMusic : MonoBehaviour
 
     private string diff;
 
+    private bool clipLoadStarted = false;
+    private bool clipReady = false;
+    private int clipLoadSeq = 0;
+
     // �Đ��Ǘ��p�̃t���O
     public static bool audioFinished = false;
 
@@ -256,99 +260,29 @@ public class PlayMusic : MonoBehaviour
 
                 time += Time.deltaTime;
 
+                // #12: WAV の読み込みを開始タイミングではなくリードイン中に前倒しする
+                if (audioDownloaded && !clipLoadStarted)
+                {
+                    clipLoadStarted = true;
+                    StartCoroutine(LoadAudioClip(++clipLoadSeq));
+                }
+
                 // �_�E�����[�h���������Ă��āA�^�C�~���O�����𖞂������ꍇ�ɍĐ�����
-                if (time >= (8.0f + adata.tlag) && !played && audioDownloaded)
+                if (time >= (8.0f + adata.tlag) && !played && audioDownloaded && clipReady)
                 {
                     adata.MusicStarted = true;
                     //PlayBgm();
                     Debug.Log("Playing...");
-                    if (adata.isOfflineMode)
+                    audioSource.Play();
+                    played = true;
+                    if (videoExists)
                     {
-                        string safeFileName = adata.GetSafeFileName(bgm);
-                        string path = Path.Combine(adata.musicPath, safeFileName + ".wav");
-                        if (!File.Exists(path))
-                        {
-                            Debug.LogError("Audio file not found: " + path);
-                            yield break;
-                        }
-
-                        using (UnityWebRequest audioRequest = UnityWebRequestMultimedia.GetAudioClip("file://" + path.Replace("+", "%2B").Replace(" ", "+").Replace("?", "%3F").Replace("&", "%26"), AudioType.WAV))
-                        {
-                            yield return audioRequest.SendWebRequest();
-
-                            if (audioRequest.result != UnityWebRequest.Result.Success)
-                            {
-                                Debug.LogError($"Failed to load audio: {audioRequest.error}");
-                                yield break;
-                            }
-
-                            audioClip = DownloadHandlerAudioClip.GetContent(audioRequest);
-                            if (audioClip == null)
-                            {
-                                Debug.LogError("Failed to create AudioClip from downloaded data!");
-                                yield break;
-                            }
-
-                            audioSource.clip = audioClip;
-                            audioSource.volume = 1.0f;
-                            audioSource.loop = false;
-                            adata.length = audioClip.length;
-                            audioSource.Play();
-                            Debug.Log("Audio started playing on offline mode: " + audioClip.name);
-                        }
-
-                        played = true;
-                        if (videoExists)
-                        {
-                            bgPos.y = -3.89f;
-                            bgTransform.position = bgPos;
-                        }
-                        Debug.Log("Play... Audio Length: " + audioClip.length);
+                        bgPos.y = -3.89f;
+                        bgTransform.position = bgPos;
                     }
-                    else
-                    {
-                        string path = Path.Combine(Application.streamingAssetsPath, "audio.wav");
-
-                        if (!File.Exists(path))
-                        {
-                            Debug.LogError("Audio file not found in StreamingAssets!");
-                            yield break;
-                        }
-
-                        using (UnityWebRequest audioRequest = UnityWebRequestMultimedia.GetAudioClip("file://" + path.Replace("+", "%2B").Replace(" ", "+").Replace("?", "%3F").Replace("&", "%26"), AudioType.WAV))
-                        {
-                            yield return audioRequest.SendWebRequest();
-
-                            if (audioRequest.result != UnityWebRequest.Result.Success)
-                            {
-                                Debug.LogError($"Failed to load audio: {audioRequest.error}");
-                                yield break;
-                            }
-
-                            audioClip = DownloadHandlerAudioClip.GetContent(audioRequest);
-                            if (audioClip == null)
-                            {
-                                Debug.LogError("Failed to create AudioClip from downloaded data!");
-                                yield break;
-                            }
-
-                            audioSource.clip = audioClip;
-                            audioSource.volume = 1.0f;
-                            audioSource.loop = false;
-                            adata.length = audioClip.length;
-                            audioSource.Play();
-                            Debug.Log("Audio started playing: " + audioClip.name);
-                        }
-
-                        played = true;
-                        if (videoExists)
-                        {
-                            bgPos.y = -3.89f;
-                            bgTransform.position = bgPos;
-                        }
-                        Debug.Log("Play... Audio Length: " + audioClip.length);
-                    }
+                    Debug.Log("Play... Audio Length: " + audioClip.length);
                 }
+
                 else if (!played && videoExists)
                 {
                     videoPlayer.time = 0;
@@ -410,6 +344,8 @@ public class PlayMusic : MonoBehaviour
                         }
                         settedUp = false;
                         audioDownloaded = false;
+                        clipLoadStarted = false;
+                        clipReady = false;
                         audioFinished = false;
                         time = 0;
                         played = false;
@@ -454,6 +390,59 @@ public class PlayMusic : MonoBehaviour
             }
 
             yield return null;
+        }
+    }
+
+    // #12: 楽曲開始の瞬間に読み込みが挟まらないよう、AudioClip を事前に読み込んでおく
+    private IEnumerator LoadAudioClip(int seq)
+    {
+        string targetBgm = bgm;
+        string path;
+        if (adata.isOfflineMode)
+        {
+            string safeFileName = adata.GetSafeFileName(targetBgm);
+            path = Path.Combine(adata.musicPath, safeFileName + ".wav");
+        }
+        else
+        {
+            path = Path.Combine(Application.streamingAssetsPath, "audio.wav");
+        }
+
+        if (!File.Exists(path))
+        {
+            Debug.LogError("Audio file not found: " + path);
+            yield break;
+        }
+
+        using (UnityWebRequest audioRequest = UnityWebRequestMultimedia.GetAudioClip("file://" + path.Replace("+", "%2B").Replace(" ", "+").Replace("?", "%3F").Replace("&", "%26"), AudioType.WAV))
+        {
+            yield return audioRequest.SendWebRequest();
+
+            if (audioRequest.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"Failed to load audio: {audioRequest.error}");
+                yield break;
+            }
+
+            audioClip = DownloadHandlerAudioClip.GetContent(audioRequest);
+            if (audioClip == null)
+            {
+                Debug.LogError("Failed to create AudioClip from downloaded data!");
+                yield break;
+            }
+
+            // 読み込み中に別の曲へ切り替わっていたら結果を破棄する
+            if (seq != clipLoadSeq)
+            {
+                yield break;
+            }
+
+            audioSource.clip = audioClip;
+            audioSource.volume = 1.0f;
+            audioSource.loop = false;
+            adata.length = audioClip.length;
+            clipReady = true;
+            Debug.Log("Audio clip preloaded: " + audioClip.name);
         }
     }
 

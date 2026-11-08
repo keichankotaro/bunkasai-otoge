@@ -32,7 +32,7 @@ public class gettime : MonoBehaviour
             {
                 if (!did)
                 {
-                    adata.game_time = -2.0f;
+                    // adata.game_time は PlayMusic 側でのみ更新する（#12: 二重書きによる譜面の不自然な動き対策）
                     did = true;
                 }
                 ayr.GetComponent<TextMeshProUGUI>().text = "Are You Ready?";
@@ -54,11 +54,7 @@ public class gettime : MonoBehaviour
                 ayr.GetComponent<TextMeshProUGUI>().text = "";
             }
             //timeText.GetComponent<TextMeshProUGUI>().text = adata.game_time + "";
-            if (start_remaing >= 6 && adata.game_time <= 0)
-            {
-                //Debug.Log(adata.game_time);
-                adata.game_time += Time.deltaTime;
-            }
+            // adata.game_time の加算は行わない（PlayMusic が一元管理する。#12）
         } 
         else
         {
