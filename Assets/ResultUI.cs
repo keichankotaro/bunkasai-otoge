@@ -22,6 +22,7 @@ public class ResultUI : MonoBehaviour
     [SerializeField] public GameObject LevelText;
     [SerializeField] public GameObject DifficultyText;
     [SerializeField] public GameObject DifficultyBackGround;
+    [SerializeField] public GameObject ScoreDiffText;
     [SerializeField] public GameObject BackGroundJacket;
     [SerializeField] public GameObject ResText;
     [SerializeField] public GameObject ComposerText;
@@ -272,7 +273,7 @@ public class ResultUI : MonoBehaviour
             // Upload result if logged in and not in autoplay
             if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn() && !adata.auto_play)
             {
-                StartCoroutine(APIManager.Instance.UploadResult(music, adata.Difficulty, score));
+                StartCoroutine(APIManager.Instance.UploadResult(music, adata.Difficulty, score, PerfectPlus, perfect, Great, good, miss, (PerfectPlus+perfect+Great+good+miss)));
                 
                 int oldHighScore = APIManager.Instance.GetHighScore(music, adata.Difficulty);
                 int diff = score - oldHighScore;
@@ -282,38 +283,24 @@ public class ResultUI : MonoBehaviour
                 {
                     if (NewRecordComponent != null) NewRecordComponent.SetActive(true);
                     
-                    TextMeshProUGUI diffText = null;
-                    if (NewRecordComponent != null)
+                    if (ScoreDiffText != null)
                     {
-                        Transform diffTransform = NewRecordComponent.transform.Find("Diff");
-                        if (diffTransform != null) diffText = diffTransform.GetComponent<TextMeshProUGUI>();
-                    }
-
-                    if (diffText != null)
-                    {
-                        /*
-                        if (oldHighScore > 0)
-                        {
-                            diffText.text = "+" + diff.ToString("N0");
-                        }
-                        else
-                        {
-                            diffText.text = "+" + diff.ToString("N0"); // 初プレイ時
-                        }
-                        */
-                        diffText.text = "High Score " + score.ToString() + " +" + diff.ToString("N0");
+                        ScoreDiffText.SetActive(true);
+                        ScoreDiffText.GetComponent<TextMeshProUGUI>().text = $"New Record! {score} +{diff}";
                     }
                 }
                 else
                 {
                     // ハイスコアではない場合は非表示
                     if (NewRecordComponent != null) NewRecordComponent.SetActive(false);
+                    if (ScoreDiffText != null) ScoreDiffText.SetActive(false);
                 }
             }
             else
             {
                 // ログインしていない、またはオートプレイの場合は非表示
                 if (NewRecordComponent != null) NewRecordComponent.SetActive(false);
+                if (ScoreDiffText != null) ScoreDiffText.SetActive(false);
             }
 
             // Update result display flags
@@ -332,10 +319,6 @@ public class ResultUI : MonoBehaviour
                 Result.GetComponent<CanvasGroup>().alpha = 0;
                 Result.GetComponent<Canvas>().sortingOrder = -1;
                 
-                if (APIManager.Instance != null && APIManager.Instance.IsLoggedIn())
-                {
-                    StartCoroutine(APIManager.Instance.FetchHighScores());
-                }
                 ScoreManeger.combo = 0;
                 ScoreManeger.score = 0;
                 ScoreManeger.ratioscore = 0;
@@ -360,9 +343,12 @@ public class ResultUI : MonoBehaviour
                 DebugText.ratioscore = "";
                 DebugText.score = "";
 
+                // ハイスコアキャッシュを無効化し、バックグラウンドで再取得
+                // （MusicSelectManager.Start()でも呼ばれるので、ここでは1回だけでOK）
                 if (APIManager.Instance != null)
                 {
                     APIManager.Instance.InvalidateHighScores();
+                    // UIをブロックせず、バックグラウンドで非同期取得
                     StartCoroutine(APIManager.Instance.FetchHighScores());
                 }
 

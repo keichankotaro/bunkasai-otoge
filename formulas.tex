@@ -1,0 +1,200 @@
+\documentclass[a4paper,11pt]{ltjsarticle}
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+
+\title{Bunkasai 2023 Otoge 内部仕様・計算式定義}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{理論値100万点に基づくスコアシステム}
+
+譜面上の全ノーツを Perfect+ で処理した場合のスコアを理論値（$S_{\mathrm{max}}$）とし、常に1,000,000点満点となるよう正規化する。
+
+各判定の基礎スコア $S_{\mathrm{base}}$ は以下の通り。
+\begin{itemize}
+    \item Perfect+ : $S_{P+} = 100$
+    \item Perfect : $S_{P} = 90$
+    \item Great : $S_{G} = 50$
+    \item Good : $S_{Gd} = 10$
+    \item Miss : $S_{M} = 0$
+\end{itemize}
+
+総ノーツ数 $N$ は、タップを1、ロングを始端と終端の2として計上する。
+\begin{equation}
+    N = N_{\mathrm{tap}} + 2N_{\mathrm{long}}
+\end{equation}
+\begin{equation}
+    S_{\mathrm{max}} = 100 N
+\end{equation}
+
+表示スコア $S_{\mathrm{ratio}}$ は、小数の丸め誤差を排除するため床関数を用いて算出する。最大値は1,000,000に制限する。
+\begin{equation}
+    S_{\mathrm{ratio}} = \min \left( 1000000, \mathrm{Round} \left( \frac{ \lfloor \frac{\sum S_{\mathrm{base}}}{S_{\mathrm{max}}} \times 10^6 \rfloor \times 10^6 }{10^6} \right) \right)
+\end{equation}
+
+\textbf{【計算例】} \\
+タップノーツ500個、ロングノーツ50個の譜面の場合、総ノーツ数 $N = 500 + 50 \times 2 = 600$、理論値 $S_{\mathrm{max}} = 60,000$ となる。
+プレイ結果が Perfect+ 590回、Perfect 8回、Great 2回の場合、獲得スコアの合計は $590 \times 100 + 8 \times 90 + 2 \times 50 = 59,820$ となる。これを式に当てはめると、表示スコアは $997,000$ 点として出力される。
+
+\section{到達時刻との差分による5段階の判定ウィンドウ}
+
+ノーツの理論到達時間 $T_{\mathrm{arr}}$ と、実際の入力時間 $T_{\mathrm{tap}}$ との絶対誤差 $\Delta t = |T_{\mathrm{tap}} - T_{\mathrm{arr}}|$ によって判定を決定する。
+\begin{equation}
+\mathrm{Judgement}(\Delta t) = 
+\begin{cases} 
+\mathrm{Perfect+} & (\Delta t \le 0.03) \\
+\mathrm{Perfect} & (0.03 < \Delta t \le 0.05) \\
+\mathrm{Great} & (0.05 < \Delta t \le 0.07) \\
+\mathrm{Good} & (0.07 < \Delta t \le 0.10) \\
+\mathrm{Miss} & (\Delta t > 0.10)
+\end{cases}
+\end{equation}
+未入力のまま $\Delta t = 0.18$ を経過した場合も強制的に Miss 判定となる。
+
+基準となるゲーム内時間 $T_{\mathrm{game}}$ は、BGMの再生時間 $T_{\mathrm{audio}}$、譜面オフセット $O_{\mathrm{chart}}$、ユーザーキャリブレーション値 $O_{\mathrm{user}}$ を加算して求める。
+\begin{equation}
+    T_{\mathrm{game}} = T_{\mathrm{audio}} - \frac{O_{\mathrm{chart}}}{f_{\mathrm{audio}}} + O_{\mathrm{user}}
+\end{equation}
+ただし、$f_{\mathrm{audio}}$ は音声データのサンプリング周波数である。
+
+\textbf{【計算例】} \\
+理論到達時間 $T_{\mathrm{arr}} = 12.50$ 秒のノーツを、ユーザーが $T_{\mathrm{tap}} = 12.54$ 秒に入力した場合、差分 $\Delta t = 0.04$ 秒となる。これは $0.03 < 0.04 \le 0.05$ の区間に収まるため、システム上「Perfect」と判定される。
+
+\section{スコアと判定数に基づくクリア・ランクの評価}
+
+各判定の取得数を $C_X$ ($X \in \{P+, P, G, Gd, M\}$) とおくとき、アチーブメントは以下の論理式で評価する。
+\begin{itemize}
+    \item \textbf{AP+} : $S_{\mathrm{ratio}} \ge 1,000,000$
+    \item \textbf{AP} : $C_{P+} + C_{P} \ge N$
+    \item \textbf{FC} : $C_{M} = 0 \land \sum_{X \neq M} C_X = N$
+    \item \textbf{Clear} : $S_{\mathrm{ratio}} \ge 750,000$
+\end{itemize}
+
+ランクは表示スコアの区間で以下のように決定する。
+\begin{itemize}
+    \item \textbf{SSS+} : $(990,000, 1,000,000]$
+    \item \textbf{SSS}  : $(980,000, 990,000]$
+    \item \textbf{SS+}  : $(975,000, 980,000]$
+    \item \textbf{SS}   : $(950,000, 975,000]$
+    \item \textbf{S+}   : $(925,000, 950,000]$
+    \item \textbf{S}    : $(900,000, 925,000]$
+    \item \textbf{AAA}  : $(850,000, 900,000]$
+    \item \textbf{AA}   : $(800,000, 850,000]$
+    \item \textbf{A}    : $(750,000, 800,000]$
+    \item \textbf{BBB}  : $(700,000, 750,000]$
+    \item \textbf{BB}   : $(650,000, 700,000]$
+    \item \textbf{B}    : $(600,000, 650,000]$
+    \item \textbf{C}    : $(550,000, 600,000]$
+    \item \textbf{D}    : $[0, 550,000]$
+\end{itemize}
+
+\textbf{【判定例】} \\
+前述の表示スコア $997,000$ 点の記録は、閾値 $990,000$ を超えるためランク「SSS+」が付与される。Miss数が0であるためアチーブメント「FC」も同時に満たす。
+
+\section{Vector3を用いたノーツの3D空間座標とスケール変換}
+
+3D空間上におけるノーツのベクトル座標 $\bm{P}_{\mathrm{note}}$ およびスケール $\bm{S}_{\mathrm{note}}$ は、判定ラインの位置、到達予定時間までの残り時間 $T_{\mathrm{rem}} = -(T_{\mathrm{game}} - T_{\mathrm{arr}})$、現在のスクロール速度 $V$ から動的に計算される。
+
+X座標は配置されるレーン番号により固定される。レーン同士のZファイティングを防ぐため、Y座標には微小なオフセットを持たせる。Z座標の基準となる判定ラインの位置を $Z_0 = -10.08565$ とするとき、位置ベクトル $\bm{P}_{\mathrm{note}}$ は次式で表される。
+
+\begin{equation}
+    \bm{P}_{\mathrm{note}} = 
+    \begin{pmatrix}
+    x_{\mathrm{lane}} \\
+    y_{\mathrm{offset}} \\
+    \frac{V}{2} T_{\mathrm{rem}} + Z_0 + Z_{\mathrm{shift}}
+    \end{pmatrix}
+\end{equation}
+
+ただし、$y_{\mathrm{offset}}$ はロングノーツで $0.01$、タップノーツで $0.02$ とする。$Z_{\mathrm{shift}}$ は、ロングノーツの中間描画を行う際の補正値（長尺の半分 $L/2$）であり、タップノーツでは $0$ である。
+
+ロングノーツの物理的長尺 $L$ は、始点時刻 $T_{\mathrm{start}}$ と終点時刻 $T_{\mathrm{end}}$ の時間差分に基準速度 $V_{\mathrm{base}}$ を掛けて展開する。スケールベクトル $\bm{S}_{\mathrm{note}}$ は以下となる。
+\begin{equation}
+    L = \frac{V_{\mathrm{base}} (T_{\mathrm{end}} - T_{\mathrm{start}})}{2}
+\end{equation}
+\begin{equation}
+    \bm{S}_{\mathrm{note}} = 
+    \begin{pmatrix}
+    0.8 \\
+    0.01 \\
+    L
+    \end{pmatrix}
+\end{equation}
+タップノーツの場合は $L = 0.1$ の固定値を取る。
+
+\textbf{【計算例】} \\
+スクロール速度 $V = 10.0$ で、ノーツ到達までの残り時間 $T_{\mathrm{rem}} = 2.0$ 秒の時点において、ノーツのZ座標は $\frac{10.0}{2} \times 2.0 - 10.08565 = -0.08565$ に描画される。
+基準速度 $V_{\mathrm{base}} = 10.0$、時間差 $0.5$ 秒のロングノーツのZ軸スケール（長尺）は $L = 10.0 \times 0.5 / 2 = 2.5$ となる。
+
+\section{三次ベジェ曲線を用いたソフラン（速度変化）}
+
+曲中の速度変化（ソフラン）は、開始時刻 $T_s$ から期間 $D$ をかけて、現在の倍率 $M_{\mathrm{start}}$ から目標倍率 $M_{\mathrm{target}}$ へと遷移させる。この遷移の補間係数 $\alpha$ の算出に三次ベジェ曲線（Cubic Bezier Curve）を用いる。
+
+正規化時間 $t \in [0,1]$ を以下とする。
+\begin{equation}
+    t = \frac{T_{\mathrm{game}} - T_s}{D}
+\end{equation}
+
+制御点 $P_0(0,0), P_1(x_1, y_1), P_2(x_2, y_2), P_3(1,1)$ で定義される三次ベジェ曲線 $B(u)$ ($u \in [0, 1]$) は以下である。
+\begin{align}
+    B_x(u) &= 3(1-u)^2 u x_1 + 3(1-u) u^2 x_2 + u^3 \\
+    B_y(u) &= 3(1-u)^2 u y_1 + 3(1-u) u^2 y_2 + u^3
+\end{align}
+
+システムは $B_x(u^*) = t$ を満たす解 $u^*$ を二分探索で求め、補間係数 $\alpha = B_y(u^*)$ を導出する。
+
+現在の速度倍率 $M_{\mathrm{current}}$ は、以下の線形補間によって決定される。
+\begin{equation}
+    M_{\mathrm{current}} = (1 - \alpha) M_{\mathrm{start}} + \alpha M_{\mathrm{target}}
+\end{equation}
+
+最終的なスクロール速度 $V$ は以下の通り。
+\begin{equation}
+    V = V_{\mathrm{default}} M_{\mathrm{current}}
+\end{equation}
+
+\textbf{【計算例】} \\
+開始時刻から $D = 2.0$ 秒かけて速度を $1.0$ 倍から $2.0$ 倍に引き上げる際、$t = 0.5$（1秒経過時点）での補間係数 $\alpha$ がベジェ曲線から $0.3$ と導出された場合、その瞬間の倍率は $(1 - 0.3) \times 1.0 + 0.3 \times 2.0 = 1.3$ 倍となる。
+
+\section{UIアニメーションとカメラ制御の数理モデル}
+
+オブジェクトの滑らかな補間や、カメラの揺れ・回転には、以下の数学関数が直接組み込まれている。
+
+\subsection{イージング関数群 (Easing)}
+アニメーションの正規化時間 $x \in [0,1]$ に対し、31種類にも及ぶ非線形補間関数が定義されている。代表的な式の定義は以下の通りである。
+
+\begin{itemize}
+    \item \textbf{Sine (三角関数系)} \\
+    $f_{\mathrm{InSine}}(x) = 1 - \cos\left(\frac{\pi x}{2}\right)$, \quad
+    $f_{\mathrm{OutSine}}(x) = \sin\left(\frac{\pi x}{2}\right)$
+    \item \textbf{Cubic (多項式系)} \\
+    $f_{\mathrm{InCubic}}(x) = x^3$, \quad
+    $f_{\mathrm{OutCubic}}(x) = 1 - (1 - x)^3$
+    \item \textbf{Circ (円関数系)} \\
+    $f_{\mathrm{InCirc}}(x) = 1 - \sqrt{1 - x^2}$, \quad
+    $f_{\mathrm{OutCirc}}(x) = \sqrt{1 - (x - 1)^2}$
+\end{itemize}
+
+\textbf{【適用例】} \\
+これらの関数は楽曲プレビュー開始時の音量フェードインや、リザルト画面のUIスライドインなど、各種オブジェクトのトランジションを滑らかにする目的で呼び出される。
+
+\subsection{単振動によるカメラバウンス (Camera Bounce)}
+プレイ中のカメラの周期的な揺れは、経過時間 $t$ を変数とする正弦波（単振動）を用いて基準Y座標 $Y_0$ に加算される。角周波数を $\omega = 10$、振幅を $A = 0.2$ とする。
+\begin{equation}
+    Y(t) = Y_0 + A \sin(\omega t)
+\end{equation}
+
+\subsection{球面座標系に基づくカメラ回転 (Camera Rotation)}
+カメラのオイラー角制御やベクトル算出において、入力された回転パラメータ $\theta$ を用いた三角関数による座標変換が行われる。基準スケール係数を $R_{\mathrm{base}} = 47.11$ とおくとき、X軸およびY軸成分は次のように展開される。
+\begin{align}
+    R_x &= R_{\mathrm{base}} \cos\left(\frac{\pi}{360} \theta\right) \\
+    R_y &= R_{\mathrm{base}} \sin\left(\frac{\pi}{360} \theta\right)
+\end{align}
+
+\textbf{【計算例】} \\
+譜面の \texttt{cameradata} で回転パラメータ $\theta = 45^\circ$ が指定された場合、X軸成分は $47.11 \times \cos\left(\frac{\pi}{8}\right) \approx 43.52$ と算出される。
+
+\end{document}

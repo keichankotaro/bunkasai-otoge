@@ -44,6 +44,7 @@ public class PlayMusic : MonoBehaviour
     public Animator Anim;
     public Image ProgressBarFill;
     public GameObject LevelBackGround;
+    public GameObject DifficultyText;
 
     private string diff;
 
@@ -138,18 +139,22 @@ public class PlayMusic : MonoBehaviour
                     if (diff == "Another")
                     {
                         LevelBackGround.GetComponent<Image>().color = new Color32(178, 0, 24, 255);
+                        DifficultyText.GetComponent<TextMeshProUGUI>().text = "Another";
                     }
                     else if (diff == "Master")
                     {
                         LevelBackGround.GetComponent<Image>().color = new Color32(217, 0, 255, 255);
+                        DifficultyText.GetComponent<TextMeshProUGUI>().text = "Master";
                     }
                     else if (diff == "Hard")
                     {
                         LevelBackGround.GetComponent<Image>().color = new Color32(255, 160, 0, 255);
+                        DifficultyText.GetComponent<TextMeshProUGUI>().text = "Hard";
                     }
                     else if (diff == "Easy")
                     {
                         LevelBackGround.GetComponent<Image>().color = new Color32(0, 255, 54, 255);
+                        DifficultyText.GetComponent<TextMeshProUGUI>().text = "Easy";
                     }
                     
 
@@ -157,10 +162,17 @@ public class PlayMusic : MonoBehaviour
                     {
                         videoPlayer = Plane.GetComponent<VideoPlayer>();
                         
+                        // カメラの背景を真っ黒に設定する
+                        Camera.main.clearFlags = CameraClearFlags.SolidColor;
+                        Camera.main.backgroundColor = Color.black;
+
                         // 背景としてカメラの最奥に直接描画する設定
                         videoPlayer.renderMode = VideoRenderMode.CameraFarPlane;
                         videoPlayer.targetCamera = Camera.main;
                         videoPlayer.aspectRatio = VideoAspectRatio.FitOutside; // 画面全体にフィットさせる
+                        
+                        // MV自体の不透明度を下げて背景の黒と混ぜ、明度を落とす
+                        videoPlayer.targetCameraAlpha = 0.4f;
                         
                         // 3Dの板(Plane)自体が描画されて貫通するのを防ぐため、メッシュ描画をオフにする
                         MeshRenderer mesh = Plane.GetComponent<MeshRenderer>();
@@ -205,6 +217,8 @@ public class PlayMusic : MonoBehaviour
                             imageObj.transform.SetParent(canvasObj.transform, false);
                             Image image = imageObj.AddComponent<Image>();
                             image.sprite = ShowDetails.jacket;
+                            // ジャケット画像自体の色を暗くする
+                            image.color = new Color(0.4f, 0.4f, 0.4f, 1f);
                             
                             // FitOutside (画面全体にフィット) を再現
                             AspectRatioFitter fitter = imageObj.AddComponent<AspectRatioFitter>();
@@ -226,6 +240,8 @@ public class PlayMusic : MonoBehaviour
                             if (image != null && ShowDetails.jacket != null)
                             {
                                 image.sprite = ShowDetails.jacket;
+                                // ジャケット画像自体の色を暗くする
+                                image.color = new Color(0.4f, 0.4f, 0.4f, 1f);
                                 AspectRatioFitter fitter = image.GetComponent<AspectRatioFitter>();
                                 if (fitter != null && ShowDetails.jacket.texture != null)
                                 {
@@ -360,8 +376,7 @@ public class PlayMusic : MonoBehaviour
                 }
                 else
                 {
-                    // 曲が始まる前(待機時間中)も、game_timeをマイナス値からスムーズに進行させる
-                    // これにより、UIのオフセット(tlag)を設定した際もワープせずにスムーズに落下するようになります
+                    // 曲が始まる前(待機時間中)も、game_timeをマイナス値から進行させる
                     float freq = (audioSource.clip != null) ? audioSource.clip.frequency : 44100f;
                     adata.game_time = time - 8.0f - (offset / freq);
                 }
