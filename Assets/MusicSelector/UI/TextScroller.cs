@@ -32,7 +32,7 @@ public class TextScroller : MonoBehaviour
             return;
         }
 
-        // ƒIƒuƒWƒFƒNƒg–¼‚É‰‚¶‚Ä‰Šú”z’uİ’è
+        // ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆåã«å¿œã˜ã¦åˆæœŸé…ç½®è¨­å®š
         string objName = gameObject.name;
         if (objName == "MusicTitle")
         {
@@ -62,10 +62,10 @@ public class TextScroller : MonoBehaviour
         textWidth = textMeshPro.preferredWidth + padding * 2;
         parentWidth = parentRectTransform.rect.width;
 
-        // RectTransform‚ÌƒTƒCƒY‚ğXV
+        // RectTransformã®ã‚µã‚¤ã‚ºã‚’æ›´æ–°
         textRectTransform.sizeDelta = new Vector2(textWidth, textRectTransform.sizeDelta.y);
 
-        // ƒeƒLƒXƒg‚ªe‚æ‚è‚à’·‚¢‚Æ‚«‚¾‚¯ƒXƒNƒ[ƒ‹
+        // ãƒ†ã‚­ã‚¹ãƒˆãŒè¦ªã‚ˆã‚Šã‚‚é•·ã„ã¨ãã ã‘ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«
         if (textWidth > parentWidth)
         {
             Vector2 startPosition = new Vector2(parentWidth + padding, textRectTransform.anchoredPosition.y);
@@ -74,7 +74,7 @@ public class TextScroller : MonoBehaviour
         }
         else
         {
-            // ƒXƒNƒ[ƒ‹‚µ‚È‚¢ ¨ •‚ğŒÅ’è‚µ’†‰›‚¼‚ë‚¦itext-align: center ‘Š“–j
+            // ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ã—ãªã„ â†’ å¹…ã‚’å›ºå®šã—ä¸­å¤®ãã‚ãˆï¼ˆtext-align: center ç›¸å½“ï¼‰
             parentWidth = 300f;
             parentRectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, parentWidth);
             textRectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 300f);
@@ -111,17 +111,17 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// ƒeƒLƒXƒg‚ÌƒXƒNƒ[ƒ‹
-/// TMP_Text‚ÉƒAƒ^ƒbƒ`‚µ‚Ä‚­‚¾‚³‚¢
+/// ãƒ†ã‚­ã‚¹ãƒˆã®ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«
+/// TMP_Textã«ã‚¢ã‚¿ãƒƒãƒã—ã¦ãã ã•ã„
 /// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class TextScroller : MonoBehaviour
 {
     [SerializeField] private float scrollSpeed = 100f;
     [SerializeField] private ContentSizeFitter ContentSizeFitter;
-    [SerializeField] private bool forceScroll = true; // ‹­§ƒXƒNƒ[ƒ‹ifalse‚Ìê‡‚Í’†‰›‚¼‚ë‚¦•\¦j
-    [SerializeField] private Vector3 musicTitlePosition = Vector3.zero; // MusicTitle —p‚ÌˆÊ’u
-    [SerializeField] private Vector3 composerPosition = Vector3.zero; // Composer —p‚ÌˆÊ’u
+    [SerializeField] private bool forceScroll = true; // å¼·åˆ¶ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ï¼ˆfalseã®å ´åˆã¯ä¸­å¤®ãã‚ãˆè¡¨ç¤ºï¼‰
+    [SerializeField] private Vector3 musicTitlePosition = Vector3.zero; // MusicTitle ç”¨ã®ä½ç½®
+    [SerializeField] private Vector3 composerPosition = Vector3.zero; // Composer ç”¨ã®ä½ç½®
 
     private RectTransform textRectTransform;
     private RectTransform parentRectTransform;
@@ -152,7 +152,7 @@ public class TextScroller : MonoBehaviour
     {
         if (!TryGetComponent<TMP_Text>(out var textComponent))
         {
-            Debug.LogWarning("TMP_Text‚ªƒAƒ^ƒbƒ`‚³‚ê‚Ä‚¢‚È‚¢‚Ì‚ÅƒXƒNƒ[ƒ‹‚Í‹@”\‚µ‚Ü‚¹‚ñ");
+            Debug.LogWarning("TMP_TextãŒã‚¢ã‚¿ãƒƒãƒã•ã‚Œã¦ã„ãªã„ã®ã§ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ã¯æ©Ÿèƒ½ã—ã¾ã›ã‚“");
             return;
         }
 
@@ -177,7 +177,7 @@ public class TextScroller : MonoBehaviour
         /*
         if (textWidth <= parentWidth || !forceScroll)
         {
-            // ƒXƒNƒ[ƒ‹•s—vA’†‰›‚¼‚ë‚¦•\¦
+            // ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ä¸è¦ã€ä¸­å¤®ãã‚ãˆè¡¨ç¤º
             Vector3 targetPos = Vector3.zero;
             switch (gameObject.name)
             {
