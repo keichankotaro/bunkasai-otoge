@@ -42,7 +42,7 @@ public static class CIBuild
             scenes = scenes,
             locationPathName = outputDir + "/bunkasai-2023-otoge.exe",
             target = BuildTarget.StandaloneWindows64,
-            options = BuildOptions.None, // Development Build ではない配布用ビルド
+            options = BuildOptions.Development, // Development Build（検証用メイン。Profiler 接続や Player.log の詳細出力が有効）
         };
 
         BuildReport report = BuildPipeline.BuildPlayer(options);
