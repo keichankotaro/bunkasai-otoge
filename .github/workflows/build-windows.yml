@@ -9,6 +9,8 @@ jobs:
   build:
     name: Build for StandaloneWindows64
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Release へのアップロードに必要
     steps:
       # LFS の実ファイルが必要（ProjectSettings などが LFS 管理のため）
       - name: Checkout
@@ -41,3 +43,21 @@ jobs:
           name: bunkasai-otoge-windows
           path: Builds/StandaloneWindows64
           if-no-files-found: error
+
+      # Release 配布用に zip 化する
+      - name: Zip build
+        run: |
+          cd Builds/StandaloneWindows64
+          zip -r ../../bunkasai-otoge-windows.zip .
+
+      # タグ dev-latest の Release を作り、毎回ここへ最新ビルドを上書きする
+      - name: Publish to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-latest
+          name: 最新開発ビルド (Development Build)
+          body: |
+            CI が自動でビルドした最新の Windows 版 (Development Build) です。
+            zip を展開して bunkasai-2023-otoge.exe を実行してください。
+          prerelease: false
+          files: bunkasai-otoge-windows.zip
