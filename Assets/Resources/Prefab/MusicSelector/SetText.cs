@@ -16,6 +16,7 @@ public class SetText : MonoBehaviour
     public GameObject MaxScore;
 
     private string jacketCachePath;
+    private Sprite jacketSprite; // #10: 破棄管理用に保持する
 
     void Awake()
     {
@@ -119,10 +120,33 @@ public class SetText : MonoBehaviour
 
     void ApplyTexture(Texture2D texture)
     {
-        if (JacketImage == null) return;
+        if (JacketImage == null)
+        {
+            Destroy(texture); // #10
+            return;
+        }
         texture.filterMode = FilterMode.Trilinear;
         texture.Apply();
-        Sprite jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-        JacketImage.GetComponent<Image>().sprite = jacket;
+        // #10: 差し替え時は前の Sprite / Texture を破棄する
+        if (jacketSprite != null)
+        {
+            Texture2D oldTexture = jacketSprite.texture;
+            Destroy(jacketSprite);
+            if (oldTexture != null && oldTexture != texture) Destroy(oldTexture);
+        }
+        jacketSprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+        JacketImage.GetComponent<Image>().sprite = jacketSprite;
+    }
+
+    // #10: リストアイテムが破棄されるときに、ジャケットの Sprite / Texture も破棄する
+    void OnDestroy()
+    {
+        if (jacketSprite != null)
+        {
+            Texture2D tex = jacketSprite.texture;
+            Destroy(jacketSprite);
+            if (tex != null) Destroy(tex);
+            jacketSprite = null;
+        }
     }
 }

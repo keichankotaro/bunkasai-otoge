@@ -50,6 +50,7 @@ public class PlayMusic : MonoBehaviour
     private bool clipLoadStarted = false;
     private bool clipReady = false;
     private int clipLoadSeq = 0;
+    private GameObject jacketBackgroundCanvas; // #10: 背景キャンバスの参照を保持して使い回す（GameObject.Find は非アクティブなオブジェクトを見つけられないため）
 
     // �Đ��Ǘ��p�̃t���O
     public static bool audioFinished = false;
@@ -184,7 +185,7 @@ public class PlayMusic : MonoBehaviour
                         videoPlayer.Play();
                         
                         // 静止画キャンバスがあれば非表示にする
-                        GameObject canvasObj = GameObject.Find("JacketBackgroundCanvas");
+                        GameObject canvasObj = jacketBackgroundCanvas != null ? jacketBackgroundCanvas : GameObject.Find("JacketBackgroundCanvas");
                         if (canvasObj != null) canvasObj.SetActive(false);
                     }
                     else
@@ -195,7 +196,7 @@ public class PlayMusic : MonoBehaviour
                         if (mesh != null) mesh.enabled = false;
                         
                         // 動画がない場合は、ジャケットを背景としてカメラの最奥に直接描画する
-                        GameObject canvasObj = GameObject.Find("JacketBackgroundCanvas");
+                        GameObject canvasObj = jacketBackgroundCanvas != null ? jacketBackgroundCanvas : GameObject.Find("JacketBackgroundCanvas");
                         if (canvasObj == null)
                         {
                             canvasObj = new GameObject("JacketBackgroundCanvas");
@@ -222,9 +223,11 @@ public class PlayMusic : MonoBehaviour
                             rect.anchorMin = Vector2.zero;
                             rect.anchorMax = Vector2.one;
                             rect.sizeDelta = Vector2.zero;
+                            jacketBackgroundCanvas = canvasObj; // #10: 次回から使い回す
                         }
                         else
                         {
+                            jacketBackgroundCanvas = canvasObj; // #10
                             canvasObj.SetActive(true);
                             Image image = canvasObj.GetComponentInChildren<Image>();
                             if (image != null && ShowDetails.jacket != null)
@@ -327,9 +330,9 @@ public class PlayMusic : MonoBehaviour
                             videoPlayer.Stop();
                             videoPlayer.url = ""; // ファイルのロックを解除する
                         }
-                        GameObject canvasObj = GameObject.Find("JacketBackgroundCanvas");
+                        GameObject canvasObj = jacketBackgroundCanvas != null ? jacketBackgroundCanvas : GameObject.Find("JacketBackgroundCanvas");
                         if (canvasObj != null) canvasObj.SetActive(false);
-                        
+
                         bgPos.y = -3.87f;
                         bgTransform.position = bgPos;
                         Anim.SetBool("bOpen", false);
@@ -424,19 +427,26 @@ public class PlayMusic : MonoBehaviour
                 yield break;
             }
 
-            audioClip = DownloadHandlerAudioClip.GetContent(audioRequest);
-            if (audioClip == null)
+            AudioClip loadedClip = DownloadHandlerAudioClip.GetContent(audioRequest);
+            if (loadedClip == null)
             {
                 Debug.LogError("Failed to create AudioClip from downloaded data!");
                 yield break;
             }
 
-            // 読み込み中に別の曲へ切り替わっていたら結果を破棄する
+            // 読み込み中に別の曲へ切り替わっていたら結果を破棄する（#10: クリップ本体も破棄する）
             if (seq != clipLoadSeq)
             {
+                Destroy(loadedClip);
                 yield break;
             }
 
+            // #10: 前の曲のクリップが残っていたら先に破棄する
+            if (audioClip != null && audioClip != loadedClip)
+            {
+                Destroy(audioClip);
+            }
+            audioClip = loadedClip;
             audioSource.clip = audioClip;
             audioSource.volume = 1.0f;
             audioSource.loop = false;
@@ -653,13 +663,19 @@ public class PlayMusic : MonoBehaviour
                 yield break;
             }
 
-            audioClip = DownloadHandlerAudioClip.GetContent(audioRequest);
-            if (audioClip == null)
+            AudioClip loadedClip = DownloadHandlerAudioClip.GetContent(audioRequest);
+            if (loadedClip == null)
             {
                 Debug.LogError("Failed to create AudioClip from downloaded data!");
                 yield break;
             }
 
+            // #10: 前の曲のクリップが残っていたら先に破棄する
+            if (audioClip != null && audioClip != loadedClip)
+            {
+                Destroy(audioClip);
+            }
+            audioClip = loadedClip;
             audioSource.clip = audioClip;
             audioSource.volume = 1.0f;
             adata.length = audioClip.length;
@@ -675,6 +691,12 @@ public class PlayMusic : MonoBehaviour
             audioSource.loop = false;
             audioSource.Stop();
             audioSource.clip = null;
+        }
+        // #10: クリップ本体を破棄しないと、プレイした曲の WAV が丸ごとメモリに残り続ける
+        if (audioClip != null)
+        {
+            Destroy(audioClip);
+            audioClip = null;
             //string path = Path.Combine(Application.dataPath, "Resources/audio.wav");
             //File.Delete(path);
         }

@@ -511,7 +511,7 @@ public class UI : MonoBehaviour
             {
                 if (clip != null)
                 {
-                    adata.previewAudioCache[musicName] = clip;
+                    adata.AddPreviewAudioCache(musicName, clip);
                 }
                 adata.audioLoaded++;
             }));
@@ -615,9 +615,9 @@ public class UI : MonoBehaviour
 
         string musicName = MusicObj[NowPage].name;
 
-        if (adata.previewAudioCache.ContainsKey(musicName))
+        if (adata.TryGetPreviewAudioCache(musicName, out AudioClip cachedClip))
         {
-            PlayPreview(adata.previewAudioCache[musicName]);
+            PlayPreview(cachedClip);
         }
         else
         {
@@ -625,7 +625,7 @@ public class UI : MonoBehaviour
             {
                 if (loadedClip != null)
                 {
-                    adata.previewAudioCache[musicName] = loadedClip;
+                    adata.AddPreviewAudioCache(musicName, loadedClip);
                     PlayPreview(loadedClip);
                 }
             }));
@@ -1257,7 +1257,7 @@ public class UI : MonoBehaviour
         }
 
 
-        adata.previewAudioCache.Clear();
+        adata.ClearPreviewAudioCache();
     }
 
     // --- 追加: ダウンロード進捗・速度・ETA・%表示付きコルーチン ---

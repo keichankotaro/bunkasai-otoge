@@ -132,6 +132,54 @@ public class adata : MonoBehaviour
     public static JObject checksumsJson;
     public static JObject audioChecksumsJson; // プレビュー音源のチェックサム
     public static Dictionary<string, AudioClip> previewAudioCache = new Dictionary<string, AudioClip>(); // プレビュー音源のキャッシュ
+    // #10: プレビューキャッシュの上限（全曲分を保持し続けるとメモリが膨らむため、古いものから破棄する）
+    public const int PreviewAudioCacheLimit = 16;
+    private static readonly List<string> previewAudioCacheOrder = new List<string>(); // 古い順
+
+    public static void AddPreviewAudioCache(string key, AudioClip clip)
+    {
+        if (key == null || clip == null) return;
+        if (previewAudioCache.TryGetValue(key, out AudioClip oldClip) && oldClip != null && oldClip != clip)
+        {
+            Destroy(oldClip);
+        }
+        previewAudioCache[key] = clip;
+        previewAudioCacheOrder.Remove(key);
+        previewAudioCacheOrder.Add(key);
+        while (previewAudioCacheOrder.Count > PreviewAudioCacheLimit)
+        {
+            string evictKey = previewAudioCacheOrder[0];
+            previewAudioCacheOrder.RemoveAt(0);
+            if (previewAudioCache.TryGetValue(evictKey, out AudioClip evictClip))
+            {
+                previewAudioCache.Remove(evictKey);
+                if (evictClip != null) Destroy(evictClip);
+            }
+        }
+    }
+
+    public static bool TryGetPreviewAudioCache(string key, out AudioClip clip)
+    {
+        if (key != null && previewAudioCache.TryGetValue(key, out clip))
+        {
+            // 使ったものを新しい側へ回す（LRU）
+            previewAudioCacheOrder.Remove(key);
+            previewAudioCacheOrder.Add(key);
+            return true;
+        }
+        clip = null;
+        return false;
+    }
+
+    public static void ClearPreviewAudioCache()
+    {
+        foreach (AudioClip clip in previewAudioCache.Values)
+        {
+            if (clip != null) Destroy(clip);
+        }
+        previewAudioCache.Clear();
+        previewAudioCacheOrder.Clear();
+    }
     public static float previewFadeDuration = 0.5f; // フェードイン・アウトの時間
     public static int audioLoaded = 0;
 

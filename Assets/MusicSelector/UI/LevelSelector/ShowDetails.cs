@@ -65,6 +65,21 @@ public class ShowDetails : MonoBehaviour
 
     private UI uiController;
 
+    // #10: ジャケット差し替え時に、前の Sprite と Texture を破棄する
+    private void SetJacketSprite(Texture2D texture)
+    {
+        Sprite newJacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+        Sprite oldJacket = jacket;
+        jacket = newJacket;
+        if (Jacket != null) Jacket.GetComponent<Image>().sprite = jacket;
+        if (oldJacket != null && oldJacket != newJacket)
+        {
+            Texture2D oldTexture = oldJacket.texture;
+            Destroy(oldJacket);
+            if (oldTexture != null && oldTexture != texture) Destroy(oldTexture);
+        }
+    }
+
     private void Awake()
     {
         jacketCachePath = Path.Combine(Application.persistentDataPath, "JacketCache");
@@ -257,11 +272,11 @@ public class ShowDetails : MonoBehaviour
                     {
                         texture.filterMode = FilterMode.Bilinear;
                         texture.Apply();
-                        jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                        if (Jacket != null) Jacket.GetComponent<Image>().sprite = jacket;
+                        SetJacketSprite(texture);
                     }
                     else
                     {
+                        Destroy(texture); // #10: 読み込み失敗時もテクスチャを残さない
                         Debug.LogWarning($"[SetText] Failed to parse jacket image for '{Music}'. File might be corrupted, HTML, or unsupported format (e.g., WebP).");
                     }
                 }
@@ -290,11 +305,11 @@ public class ShowDetails : MonoBehaviour
                         {
                             texture.filterMode = FilterMode.Bilinear;
                             texture.Apply();
-                            jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                            if (Jacket != null) Jacket.GetComponent<Image>().sprite = jacket;
+                            SetJacketSprite(texture);
                         }
                         else
                         {
+                            Destroy(texture); // #10: 読み込み失敗時もテクスチャを残さない
                             Debug.LogWarning($"[SetText] Failed to parse jacket image for '{Music}' from API. File might be corrupted, HTML, or unsupported format (e.g., WebP).");
                         }
                     }
