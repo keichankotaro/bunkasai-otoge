@@ -48,6 +48,8 @@ public class UI : MonoBehaviour
     public GameObject MasterText;
     public GameObject AnotherText;
 
+    public GameObject BGJacket;
+
     private float ClickTime = 0.0f;
     private float LastMove = 0.0f;
     private int Moved = 0;
@@ -56,6 +58,13 @@ public class UI : MonoBehaviour
 
     private AudioSource previewAudioSource;
     private Coroutine previewAudioCoroutine;
+
+    public TMP_Dropdown SetShowDiff;
+    private List<string> AllMusics = new List<string>();
+    private List<List<bool>> AllLevelExists = new List<List<bool>>();
+    private List<List<string>> AllLevels = new List<List<string>>();
+    private List<List<string>> CurrentLevels = new List<List<string>>();
+    public int currentLevelFilter = 0;
     private Coroutine fadeCoroutine;
     private string previewAudioCachePath;
 
@@ -92,6 +101,12 @@ public class UI : MonoBehaviour
     private Coroutine fadeLevelSelectorCoroutine = null;
 
     private string settingsFilePath;
+    private string jacketCachePath;
+
+    private static string lastFetchedSort = null;
+    private static string lastFetchedOrder = null;
+    private static string lastFetchedGenre = null;
+
     private static bool checksumManagerInitialized = false;
 
     void Awake()
@@ -114,6 +129,12 @@ public class UI : MonoBehaviour
         if (!Directory.Exists(previewAudioCachePath))
         {
             Directory.CreateDirectory(previewAudioCachePath);
+        }
+
+        jacketCachePath = Path.Combine(Application.persistentDataPath, "JacketCache");
+        if (!Directory.Exists(jacketCachePath))
+        {
+            Directory.CreateDirectory(jacketCachePath);
         }
 
         settingsFilePath = Path.Combine(Application.persistentDataPath, "settings.json");
@@ -170,6 +191,11 @@ public class UI : MonoBehaviour
         SortBy.onValueChanged.AddListener(delegate { OnSortChanged(); });
         OrderBy.onValueChanged.AddListener(delegate { OnSortChanged(); });
         Genre.onValueChanged.AddListener(delegate { OnSortChanged(); });
+        if (SetShowDiff != null)
+        {
+            SetShowDiff.value = 0;
+            SetShowDiff.onValueChanged.AddListener(OnDiffDropdownChanged);
+        }
 
         // ★★★ 変更箇所 ★★★
         // reDownloadボタンにリスナーを追加 (具体的な処理は未実装)
@@ -408,7 +434,22 @@ public class UI : MonoBehaviour
                 string jsonContent = File.ReadAllText(musicListCachePath);
                 httpJsonObj = JObject.Parse(jsonContent);
                 adata.musicsJson = httpJsonObj;
-                Musics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
+                AllMusics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
+                AllLevelExists = (httpJsonObj["diffs"] as JArray).ToObject<List<List<bool>>>();
+                AllLevels = (httpJsonObj["levels"] as JArray).ToObject<List<List<string>>>();
+                
+                // オフライン時は強制的に文字コード昇順（数字→英字→ひらがな→カタカナ→漢字）にソート
+                var combined = new List<Tuple<string, List<bool>, List<string>>>();
+                for(int i = 0; i < AllMusics.Count; i++) {
+                    combined.Add(new Tuple<string, List<bool>, List<string>>(AllMusics[i], AllLevelExists[i], AllLevels[i]));
+                }
+                combined = combined.OrderBy(x => x.Item1, StringComparer.OrdinalIgnoreCase).ToList();
+                AllMusics = combined.Select(x => x.Item1).ToList();
+                AllLevelExists = combined.Select(x => x.Item2).ToList();
+                AllLevels = combined.Select(x => x.Item3).ToList();
+
+                FilterMusics();
+
                 adata.checksumsJson = null; // オフラインでは不要
                 adata.audioChecksumsJson = null; // オフラインでは不要
                 StartCoroutine(SetupProcessCoroutine());
@@ -423,12 +464,30 @@ public class UI : MonoBehaviour
         }
 
         // --- オンラインモードの処理 ---
-        Debug.Log("[Setup] Online mode: Fetching data from server.");
+        // 同じ条件で既に取得済みならキャッシュを使用（フリーズ回避）
+        if (httpJsonObj != null && lastFetchedSort == adata.sort && lastFetchedOrder == adata.order && lastFetchedGenre == adata.genre)
+        {
+            Debug.Log("[Setup] Online mode: Using cached data.");
+            AllMusics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
+            AllLevelExists = (httpJsonObj["diffs"] as JArray).ToObject<List<List<bool>>>();
+            AllLevels = (httpJsonObj["levels"] as JArray).ToObject<List<List<string>>>();
+            FilterMusics();
+            StartCoroutine(SetupProcessCoroutine());
+            return;
+        }
+
+        Debug.Log("[Setup] Online mode: Fetching data from server (Async).");
+        FetchOnlineDataAsync();
+    }
+
+    private async void FetchOnlineDataAsync()
+    {
         try
         {
             var client = new RestClient($"https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getMusicList/index.cgi?sort={adata.sort}&order={adata.order}&genre={adata.genre}");
             var request = new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) };
-            var response = client.Execute(request);
+            // 非同期で取得し、メインスレッドをブロックしない
+            var response = await client.ExecuteAsync(request);
 
             if (response.StatusCode != System.Net.HttpStatusCode.OK)
             {
@@ -441,15 +500,23 @@ public class UI : MonoBehaviour
 
             httpJsonObj = JObject.Parse(response.Content);
             adata.musicsJson = httpJsonObj;
-            Musics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
+            AllMusics = (httpJsonObj["charts"] as JArray).ToObject<List<string>>();
+            AllLevelExists = (httpJsonObj["diffs"] as JArray).ToObject<List<List<bool>>>();
+            AllLevels = (httpJsonObj["levels"] as JArray).ToObject<List<List<string>>>();
+            FilterMusics();
 
             var checksumClient = new RestClient("https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getJacket/getChecksum/?command=all");
-            var checksumResponse = checksumClient.Execute(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
+            var checksumResponse = await checksumClient.ExecuteAsync(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
             adata.checksumsJson = JObject.Parse(checksumResponse.Content);
 
             var audioChecksumClient = new RestClient("https://keichankotaro.com/%E6%96%87%E5%8C%96%E7%A5%AD%E9%9F%B3%E3%82%B2%E3%83%BC/api/getPreviewAudio/getChecksum/?command=all");
-            var audioChecksumResponse = audioChecksumClient.Execute(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
+            var audioChecksumResponse = await audioChecksumClient.ExecuteAsync(new RestRequest { Method = Method.Get, Timeout = TimeSpan.FromMinutes(10) });
             adata.audioChecksumsJson = JObject.Parse(audioChecksumResponse.Content);
+
+            // 取得成功時に条件を保存
+            lastFetchedSort = adata.sort;
+            lastFetchedOrder = adata.order;
+            lastFetchedGenre = adata.genre;
 
             StartCoroutine(SetupProcessCoroutine());
         }
@@ -478,24 +545,31 @@ public class UI : MonoBehaviour
             }
         }
 
-        LevelExists = (httpJsonObj["diffs"] as JArray).ToObject<List<List<bool>>>();
         PageNo.GetComponent<TextMeshProUGUI>().text = $"{NowPage + 1}/{Musics.Count}";
         UpdateLevelTexts();
 
+        adata.loaded = 0;
         for (int i = 0; i < Musics.Count; i++)
         {
             MusicObj.Add(Instantiate(MusicPrefab));
             MusicObj[i].transform.parent = canvas.transform;
             Vector3 pos = MusicObj[i].transform.position;
             pos.x = 500.0f * (i - NowPage);
-            pos.y = 0.0f;
+            pos.y = -40.0f;
             pos.z = 0.0f;
             MusicObj[i].transform.position = pos;
             MusicObj[i].name = (string)Musics[i];
             MusicObj[i].transform.SetSiblingIndex(1);
+            
+            // プレハブの大量生成によるフリーズを防ぐため、一定数ごとにフレームをまたぐ
+            if (i % 5 == 0)
+            {
+                SetupProgress = (int)(((float)i / Musics.Count) * 100);
+                SetupText.GetComponent<TextMeshProUGUI>().text = $"Creating Panels... {SetupProgress}%";
+                yield return null;
+            }
         }
 
-        adata.loaded = 0;
         while (adata.loaded < Musics.Count)
         {
             SetupProgress = (int)(((float)adata.loaded / Musics.Count) * 100);
@@ -537,11 +611,58 @@ public class UI : MonoBehaviour
 
     private void UpdateLevelTexts()
     {
-        if (httpJsonObj == null || NowPage < 0 || NowPage >= Musics.Count) return;
-        AnotherText.GetComponent<TextMeshProUGUI>().text = httpJsonObj["levels"][NowPage][0] + "";
-        MasterText.GetComponent<TextMeshProUGUI>().text = httpJsonObj["levels"][NowPage][1] + "";
-        HardText.GetComponent<TextMeshProUGUI>().text = httpJsonObj["levels"][NowPage][2] + "";
-        EasyText.GetComponent<TextMeshProUGUI>().text = httpJsonObj["levels"][NowPage][3] + "";
+        if (CurrentLevels == null || NowPage < 0 || NowPage >= CurrentLevels.Count) return;
+        AnotherText.GetComponent<TextMeshProUGUI>().text = CurrentLevels[NowPage][0] + "";
+        MasterText.GetComponent<TextMeshProUGUI>().text = CurrentLevels[NowPage][1] + "";
+        HardText.GetComponent<TextMeshProUGUI>().text = CurrentLevels[NowPage][2] + "";
+        EasyText.GetComponent<TextMeshProUGUI>().text = CurrentLevels[NowPage][3] + "";
+    }
+
+    public void OnDiffDropdownChanged(int value)
+    {
+        if (currentLevelFilter == value) return;
+        currentLevelFilter = value;
+        
+        // ドロップダウンからフォーカスを外す。
+        if (UnityEngine.EventSystems.EventSystem.current != null)
+        {
+            UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
+        }
+        
+        StopAllCoroutines();
+        foreach (var obj in MusicObj) { if (obj != null) Destroy(obj); }
+        MusicObj.Clear();
+        if (previewAudioSource != null && previewAudioSource.isPlaying) previewAudioSource.Stop();
+        
+        SetupLoading.SetActive(true);
+        NowPage = 0;
+        
+        FilterMusics();
+        StartCoroutine(SetupProcessCoroutine());
+    }
+
+    private void FilterMusics()
+    {
+        Musics.Clear();
+        LevelExists.Clear();
+        CurrentLevels.Clear();
+        
+        // 0:All, 1:Easy(3), 2:Hard(2), 3:Master(1), 4:Another(0)
+        int diffIndex = -1;
+        if (currentLevelFilter == 1) diffIndex = 3;
+        else if (currentLevelFilter == 2) diffIndex = 2;
+        else if (currentLevelFilter == 3) diffIndex = 1;
+        else if (currentLevelFilter == 4) diffIndex = 0;
+
+        for (int i = 0; i < AllMusics.Count; i++)
+        {
+            if (diffIndex == -1 || AllLevelExists[i][diffIndex])
+            {
+                Musics.Add(AllMusics[i]);
+                LevelExists.Add(AllLevelExists[i]);
+                CurrentLevels.Add(AllLevels[i]);
+            }
+        }
     }
 
     private void MoveMusicSelection(int direction, bool animate = true)
@@ -565,6 +686,14 @@ public class UI : MonoBehaviour
                 }
             }
 
+            string musicName = Musics[NowPage];
+            string safeFileName = string.Join("_", musicName.Split(Path.GetInvalidFileNameChars()));
+            string localImagePath = Path.Combine(jacketCachePath, safeFileName + ".jpg");
+            byte[] fileData = File.ReadAllBytes(localImagePath);
+
+            Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            texture.LoadImage(fileData);
+            ApplyTexture(texture);
             PageNo.GetComponent<TextMeshProUGUI>().text = $"{NowPage + 1}/{MusicObj.Count}";
             UpdateLevelTexts();
 
@@ -960,9 +1089,109 @@ public class UI : MonoBehaviour
 
         if (SetupText != null)
         {
+            SetupText.GetComponent<TextMeshProUGUI>().text = "音源ダウンロード完了。動画を確認中...";
+        }
+        yield return null;
+
+        // 5. 動画のダウンロード（存在する曲のみ）
+        int videoCompleted = 0;
+        int videoTotal = 0;
+        int videoCurrentDownloads = 0;
+
+        // まず全曲の動画存在チェックを行い、存在する曲のリストを作成
+        List<int> videoIndices = new List<int>();
+        for (int i = 0; i < total; i++)
+        {
+            string musicName = Musics[i];
+            string safeFileName = adata.GetSafeFileName(musicName);
+            string videoSavePath = Path.Combine(musicPath, safeFileName + ".mp4");
+
+            // 既にダウンロード済みならスキップ
+            if (File.Exists(videoSavePath))
+            {
+                AddDownloadLog($"動画: {musicName} (キャッシュ済み)", contentTransform);
+                continue;
+            }
+
+            string encodedMusicName = Uri.EscapeDataString(musicName);
+            string videoExistsUrl = $"{baseUrl}/videoExists?name={encodedMusicName}";
+            using (UnityWebRequest existsReq = UnityWebRequest.Get(videoExistsUrl))
+            {
+                existsReq.timeout = 10;
+                yield return existsReq.SendWebRequest();
+                if (existsReq.result == UnityWebRequest.Result.Success)
+                {
+                    try
+                    {
+                        JObject existsData = JObject.Parse(existsReq.downloadHandler.text);
+                        if (existsData["exists"].ToObject<bool>())
+                        {
+                            videoIndices.Add(i);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"[DownloadAll] Failed to parse videoExists for {musicName}: {e.Message}");
+                    }
+                }
+            }
+
+            if (SetupText != null)
+            {
+                SetupText.GetComponent<TextMeshProUGUI>().text = $"動画の存在を確認中... ({i + 1}/{total})";
+            }
+        }
+
+        videoTotal = videoIndices.Count;
+        if (videoTotal > 0)
+        {
+            bool[] videoDone = new bool[videoTotal];
+
+            IEnumerator DownloadVideo(int listIdx)
+            {
+                while (videoCurrentDownloads >= maxConcurrentDownloads) yield return null;
+                videoCurrentDownloads++;
+
+                int musicIdx = videoIndices[listIdx];
+                string musicName = Musics[musicIdx];
+                string encodedMusicName = Uri.EscapeDataString(musicName);
+                string safeFileName = adata.GetSafeFileName(musicName);
+                string videoUrl = $"{baseUrl}/getVideo?chart={encodedMusicName}";
+                string videoSavePath = Path.Combine(musicPath, safeFileName + ".mp4");
+
+                TextMeshProUGUI logLine = AddDownloadLog($"動画: {musicName}", contentTransform);
+                yield return StartCoroutine(DownloadAndSaveFileCoroutineWithSpeed(videoUrl, videoSavePath, logLine));
+
+                videoDone[listIdx] = true;
+                videoCompleted++;
+                videoCurrentDownloads--;
+            }
+
+            for (int i = 0; i < videoTotal; i++)
+            {
+                StartCoroutine(DownloadVideo(i));
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            while (videoDone.Any(x => !x))
+            {
+                if (SetupText != null)
+                {
+                    SetupText.GetComponent<TextMeshProUGUI>().text = $"動画ダウンロード中... ({videoCompleted}/{videoTotal})";
+                }
+                yield return null;
+            }
+        }
+        else
+        {
+            Debug.Log("[DownloadAll] No videos to download.");
+        }
+
+        if (SetupText != null)
+        {
             SetupText.GetComponent<TextMeshProUGUI>().text = "全てのダウンロードが完了しました。";
         }
-        Debug.Log("[DownloadAll] Finished downloading all music data.");
+        Debug.Log("[DownloadAll] Finished downloading all music data (including videos).");
         yield return new WaitForSeconds(2); // 完了メッセージを2秒表示
         if (previewAudioSource.isPlaying)
         {
@@ -1412,5 +1641,14 @@ public class UI : MonoBehaviour
             bytes = bytes / 1024f;
         }
         return $"{bytes:F1} {sizes[order]}";
+    }
+
+    void ApplyTexture(Texture2D texture)
+    {
+        if (BGJacket == null) return;
+        texture.filterMode = FilterMode.Trilinear;
+        texture.Apply();
+        Sprite jacket = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+        BGJacket.GetComponent<UnityEngine.UI.Image>().sprite = jacket;
     }
 }

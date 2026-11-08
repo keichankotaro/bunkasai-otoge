@@ -1,0 +1,1 @@
+﻿using UnityEngine; using UnityEditor; public class TestCover { [MenuItem("Tools/Test Cover")] public static void Test() { Sprite s = Resources.Load<Sprite>("UI/Stage/Cover"); if (s != null) { Debug.Log("Cover found! " + s.rect.width + "x" + s.rect.height); } else { Debug.Log("Cover NOT found!"); } } }

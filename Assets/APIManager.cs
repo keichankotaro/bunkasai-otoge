@@ -80,9 +80,21 @@ public class APIManager : MonoBehaviour
         }
     }
 
+    public class ScoreRecord
+    {
+        public int Score;
+        public int PerfectPlus;
+        public int Perfect;
+        public int Great;
+        public int Good;
+        public int Miss;
+        public int MaxNotes;
+    }
+
     private Dictionary<string, int> _highScores = new Dictionary<string, int>();
-    private Dictionary<string, int> _highScoresWithDiff = new Dictionary<string, int>();
+    private Dictionary<string, ScoreRecord> _highScoresWithDiff = new Dictionary<string, ScoreRecord>();
     private bool _highScoresFetched = false;
+    private bool _isFetchingHighScores = false; // 二重取得防止フラグ
     public Action OnHighScoresUpdated;
 
     public int GetHighScore(string songTitle)
@@ -91,10 +103,16 @@ public class APIManager : MonoBehaviour
         return score;
     }
 
+    public ScoreRecord GetHighScoreRecord(string songTitle, string difficulty)
+    {
+        _highScoresWithDiff.TryGetValue(songTitle + "_" + difficulty, out ScoreRecord record);
+        return record;
+    }
+
     public int GetHighScore(string songTitle, string difficulty)
     {
-        _highScoresWithDiff.TryGetValue(songTitle + "_" + difficulty, out int score);
-        return score;
+        var record = GetHighScoreRecord(songTitle, difficulty);
+        return record != null ? record.Score : 0;
     }
 
     public void InvalidateHighScores()
@@ -107,11 +125,13 @@ public class APIManager : MonoBehaviour
 
     public IEnumerator FetchHighScores(Action onComplete = null)
     {
-        if (!IsLoggedIn() || _highScoresFetched)
+        if (!IsLoggedIn() || _highScoresFetched || _isFetchingHighScores)
         {
             onComplete?.Invoke();
             yield break;
         }
+
+        _isFetchingHighScores = true;
 
         using (UnityWebRequest www = UnityWebRequest.Get(BaseUrl + "get_my_high_scores.cgi"))
         {
@@ -145,8 +165,18 @@ public class APIManager : MonoBehaviour
                                 _highScores.Add(songTitle, highScore);
                             }
 
-                            // Store specific difficulty score
-                            _highScoresWithDiff[songTitle + "_" + difficulty] = highScore;
+                            // Store specific difficulty score record
+                            ScoreRecord record = new ScoreRecord
+                            {
+                                Score = highScore,
+                                PerfectPlus = scoreData["perfect_plus"]?.ToObject<int>() ?? 0,
+                                Perfect = scoreData["perfect"]?.ToObject<int>() ?? 0,
+                                Great = scoreData["great"]?.ToObject<int>() ?? 0,
+                                Good = scoreData["good"]?.ToObject<int>() ?? 0,
+                                Miss = scoreData["miss"]?.ToObject<int>() ?? 0,
+                                MaxNotes = scoreData["maxnotes"]?.ToObject<int>() ?? 0
+                            };
+                            _highScoresWithDiff[songTitle + "_" + difficulty] = record;
                         }
                         _highScoresFetched = true;
                         Debug.Log("High scores fetched successfully.");
@@ -167,10 +197,11 @@ public class APIManager : MonoBehaviour
                 Debug.LogError("Error fetching high scores: " + www.error);
             }
         }
+        _isFetchingHighScores = false;
         onComplete?.Invoke();
     }
 
-    public IEnumerator UploadResult(string songTitle, string difficulty, int score)
+    public IEnumerator UploadResult(string songTitle, string difficulty, int score, int pp, int p, int gr, int go, int m, int max)
     {
         if (!IsLoggedIn())
         {
@@ -182,6 +213,12 @@ public class APIManager : MonoBehaviour
         form.AddField("song_title", songTitle);
         form.AddField("difficulty", difficulty);
         form.AddField("score", score);
+        form.AddField("perfectplus", pp);
+        form.AddField("perfect", p);
+        form.AddField("great", gr);
+        form.AddField("good", go);
+        form.AddField("miss", m);
+        form.AddField("maxnotes", max);
 
         using (UnityWebRequest www = UnityWebRequest.Post(BaseUrl + "upload_result.cgi", form))
         {
